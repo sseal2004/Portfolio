@@ -1,0 +1,9 @@
+/* timeline-theme.css */
+
+.vertical-timeline::before {
+  background: fuchsia; /* Light mode */
+}
+
+.dark .vertical-timeline::before {
+  background: white; /* Dark mode */
+}

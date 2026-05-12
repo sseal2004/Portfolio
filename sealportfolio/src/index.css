@@ -1,0 +1,82 @@
+/* ✅ Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,100..700;1,100..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+/* ✅ Tailwind base layers */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+html, body {
+  scroll-behavior: smooth;
+  overflow-x: hidden; /* Prevent accidental horizontal scroll unless you want it */
+}
+
+/* ✅ Global styles */
+body {
+  @apply bg-white text-black dark:bg-darkBrown dark:text-white transition-colors duration-300;
+
+}
+.custom-responsive-wrap {
+  white-space: nowrap;
+}
+
+/* Fix for screen widths between 804px and 938px */
+@media (max-width: 938px) {
+  .custom-responsive-wrap {
+    white-space: normal;
+  }
+}
+
+/* ✅ Custom animations */
+@keyframes orangeGlow {
+  0%, 100% {
+    box-shadow: 0 0 25px rgba(255, 165, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(255, 165, 0, 0.8);
+  }
+}
+
+@keyframes spin-slow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+@layer utilities {
+  @keyframes spin-slow {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes spin3d {
+    0% {
+      transform: rotateX(0deg) rotateY(0deg);
+    }
+    50% {
+      transform: rotateX(180deg) rotateY(180deg);
+    }
+    100% {
+      transform: rotateX(360deg) rotateY(360deg);
+    }
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 8s linear infinite;
+  }
+
+  .animate-spin3d {
+    animation: spin3d 6s ease-in-out infinite;
+    transform-style: preserve-3d;
+  }
+}
+
