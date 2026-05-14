@@ -44,7 +44,6 @@ const NeuralCanvas = () => {
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Dark bg gradient
       const bg = ctx.createRadialGradient(
         canvas.width * 0.5, canvas.height * 0.4, 0,
         canvas.width * 0.5, canvas.height * 0.5, canvas.width * 1.1
@@ -55,11 +54,10 @@ const NeuralCanvas = () => {
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Corner glows (purple + blue + orange)
       [
-        { x: 0.1,  y: 0.15, r: 0.5,  c: 'rgba(180,60,255,0.09)' },
-        { x: 0.9,  y: 0.8,  r: 0.45, c: 'rgba(60,120,255,0.07)' },
-        { x: 0.5,  y: 1.0,  r: 0.4,  c: 'rgba(251,146,60,0.06)' },
+        { x: 0.1, y: 0.15, r: 0.5,  c: 'rgba(180,60,255,0.09)' },
+        { x: 0.9, y: 0.8,  r: 0.45, c: 'rgba(60,120,255,0.07)' },
+        { x: 0.5, y: 1.0,  r: 0.4,  c: 'rgba(251,146,60,0.06)' },
       ].forEach(({ x, y, r, c }) => {
         const g = ctx.createRadialGradient(
           x * canvas.width, y * canvas.height, 0,
@@ -71,7 +69,6 @@ const NeuralCanvas = () => {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       });
 
-      // Move nodes
       nodes.forEach((n) => {
         n.x += n.vx;
         n.y += n.vy;
@@ -80,7 +77,6 @@ const NeuralCanvas = () => {
         if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
       });
 
-      // Lines
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
           const dx = nodes[i].x - nodes[j].x;
@@ -98,7 +94,6 @@ const NeuralCanvas = () => {
         }
       }
 
-      // Nodes
       nodes.forEach((n) => {
         const pulse = 0.6 + 0.4 * Math.sin(n.pulse);
         ctx.beginPath();
@@ -156,7 +151,7 @@ export default function ChatBot() {
     const trimmed = input.trim();
     if (!trimmed || loading) return;
 
-    const userMsg        = { role: 'user', content: trimmed };
+    const userMsg         = { role: 'user', content: trimmed };
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
     setInput('');
@@ -217,12 +212,11 @@ export default function ChatBot() {
         }
         .chatbot-float { animation: float-up 3.5s ease-in-out infinite; }
         .chatbot-float:hover { animation: none; }
-        .chatbot-orb-ping {
-          animation: orb-ping 2s ease-out infinite;
-        }
+        .chatbot-orb-ping { animation: orb-ping 2s ease-out infinite; }
         .chatbot-messages::-webkit-scrollbar { width: 4px; }
         .chatbot-messages::-webkit-scrollbar-track { background: transparent; }
         .chatbot-messages::-webkit-scrollbar-thumb { background: rgba(251,146,60,0.25); border-radius: 4px; }
+        .chatbot-input::-webkit-scrollbar { display: none; }
       `}</style>
 
       {/* ── Floating Button ── */}
@@ -263,10 +257,7 @@ export default function ChatBot() {
           )}
 
           {/* Spinning border */}
-          <span
-            className={`chatbot-spin-ring absolute rounded-full`}
-            style={{ inset: -3 }}
-          />
+          <span className="chatbot-spin-ring absolute rounded-full" style={{ inset: -3 }} />
 
           {/* Button face */}
           <button
@@ -283,12 +274,13 @@ export default function ChatBot() {
           >
             {/* Notification dot */}
             {hasNewMsg && !isOpen && (
-              <span className="absolute top-0.5 right-0.5 w-3 h-3 rounded-full bg-orange-500 border-2"
-                style={{ borderColor: '#07070f' }} />
+              <span
+                className="absolute top-0.5 right-0.5 w-3 h-3 rounded-full bg-orange-500 border-2"
+                style={{ borderColor: '#07070f' }}
+              />
             )}
 
             {isOpen ? (
-              /* Close X */
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                 <defs>
                   <linearGradient id="cb-close" x1="0" y1="0" x2="1" y2="1">
@@ -299,7 +291,6 @@ export default function ChatBot() {
                 <path d="M6 18L18 6M6 6l12 12" stroke="url(#cb-close)" strokeWidth="2.5" strokeLinecap="round" />
               </svg>
             ) : (
-              /* Neural chat icon */
               <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
                 <defs>
                   <linearGradient id="cb-icon" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -312,42 +303,27 @@ export default function ChatBot() {
                     <stop offset="100%" stopColor="#a855f7" />
                   </linearGradient>
                 </defs>
-
-                {/* Chat bubble */}
                 <path
                   d="M14 4C9.03 4 5 7.69 5 12.2c0 2.56 1.34 4.85 3.44 6.34L7.5 22.5l3.94-1.69A9.8 9.8 0 0014 21.4c4.97 0 9-3.69 9-8.2S18.97 4 14 4z"
-                  fill="url(#cb-icon)"
-                  opacity="0.14"
+                  fill="url(#cb-icon)" opacity="0.14"
                 />
                 <path
                   d="M14 4C9.03 4 5 7.69 5 12.2c0 2.56 1.34 4.85 3.44 6.34L7.5 22.5l3.94-1.69A9.8 9.8 0 0014 21.4c4.97 0 9-3.69 9-8.2S18.97 4 14 4z"
-                  stroke="url(#cb-icon)"
-                  strokeWidth="1.4"
-                  fill="none"
+                  stroke="url(#cb-icon)" strokeWidth="1.4" fill="none"
                 />
-
-                {/* Dots */}
-                <circle cx="10"  cy="12.5" r="1.2" fill="url(#cb-icon)" />
-                <circle cx="14"  cy="12.5" r="1.2" fill="url(#cb-icon)" />
-                <circle cx="18"  cy="12.5" r="1.2" fill="url(#cb-icon)" />
-
-                {/* Neural connection lines from dots upward */}
-                <line x1="10" y1="11.3" x2="9"  y2="8.5"  stroke="url(#cb-icon2)" strokeWidth="0.8" strokeLinecap="round" opacity="0.6" />
-                <line x1="14" y1="11.3" x2="14" y2="8"    stroke="url(#cb-icon2)" strokeWidth="0.8" strokeLinecap="round" opacity="0.6" />
-                <line x1="18" y1="11.3" x2="19" y2="8.5"  stroke="url(#cb-icon2)" strokeWidth="0.8" strokeLinecap="round" opacity="0.6" />
-
-                {/* Small node dots at top of lines */}
+                <circle cx="10" cy="12.5" r="1.2" fill="url(#cb-icon)" />
+                <circle cx="14" cy="12.5" r="1.2" fill="url(#cb-icon)" />
+                <circle cx="18" cy="12.5" r="1.2" fill="url(#cb-icon)" />
+                <line x1="10" y1="11.3" x2="9"  y2="8.5" stroke="url(#cb-icon2)" strokeWidth="0.8" strokeLinecap="round" opacity="0.6" />
+                <line x1="14" y1="11.3" x2="14" y2="8"   stroke="url(#cb-icon2)" strokeWidth="0.8" strokeLinecap="round" opacity="0.6" />
+                <line x1="18" y1="11.3" x2="19" y2="8.5" stroke="url(#cb-icon2)" strokeWidth="0.8" strokeLinecap="round" opacity="0.6" />
                 <circle cx="9"  cy="8.5" r="0.9" fill="#fb923c" opacity="0.7" />
                 <circle cx="14" cy="8"   r="0.9" fill="#a855f7" opacity="0.7" />
                 <circle cx="19" cy="8.5" r="0.9" fill="#3b82f6" opacity="0.7" />
-
-                {/* Top-right sparkle */}
-                <line x1="23" y1="4.5" x2="23" y2="7"   stroke="#fb923c" strokeWidth="1.2" strokeLinecap="round" />
+                <line x1="23" y1="4.5" x2="23" y2="7"     stroke="#fb923c" strokeWidth="1.2" strokeLinecap="round" />
                 <line x1="21.75" y1="5.75" x2="24.25" y2="5.75" stroke="#fb923c" strokeWidth="1.2" strokeLinecap="round" />
-
-                {/* Bottom-left mini sparkle */}
-                <line x1="4.5" y1="20" x2="4.5" y2="22"  stroke="#3b82f6" strokeWidth="1" strokeLinecap="round" />
-                <line x1="3.5" y1="21" x2="5.5" y2="21"  stroke="#3b82f6" strokeWidth="1" strokeLinecap="round" />
+                <line x1="4.5" y1="20" x2="4.5" y2="22"   stroke="#3b82f6" strokeWidth="1" strokeLinecap="round" />
+                <line x1="3.5" y1="21" x2="5.5" y2="21"   stroke="#3b82f6" strokeWidth="1" strokeLinecap="round" />
               </svg>
             )}
           </button>
@@ -355,31 +331,33 @@ export default function ChatBot() {
       </div>
 
       {/* ── Chat Window ── */}
+      {/*
+        FIX: Use fixed `height` (not maxHeight) so the window never grows.
+        The flex column inside distributes space: header (fixed) + messages (flex-1, scrollable) + input (fixed).
+      */}
       <div
         className="fixed z-[9998] flex flex-col overflow-hidden transition-all duration-300 ease-in-out"
         style={{
           bottom: 88,
           right: 24,
           width: 360,
-          maxHeight: 540,
+          height: 540,           /* ← FIXED height, not maxHeight */
           borderRadius: 20,
           transformOrigin: 'bottom right',
-          transform: isOpen ? 'scale(1)'   : 'scale(0.88)',
-          opacity:   isOpen ? 1            : 0,
-          pointerEvents: isOpen ? 'auto'   : 'none',
+          transform: isOpen ? 'scale(1)'  : 'scale(0.88)',
+          opacity:   isOpen ? 1           : 0,
+          pointerEvents: isOpen ? 'auto'  : 'none',
           border: '1px solid rgba(251,146,60,0.18)',
           boxShadow: '0 0 0 1px rgba(168,85,247,0.1), 0 24px 60px rgba(0,0,0,0.7), 0 0 40px rgba(251,146,60,0.08)',
         }}
       >
-        {/* ── Header with neural canvas bg ── */}
+        {/* ── Header ── */}
         <div className="relative flex-shrink-0 overflow-hidden" style={{ height: 68 }}>
           <NeuralCanvas />
-
-          {/* Header content overlay */}
-          <div className="absolute inset-0 flex items-center gap-3 px-4"
-            style={{ background: 'linear-gradient(90deg, rgba(13,13,26,0.6) 0%, transparent 100%)' }}>
-
-            {/* Avatar with spinning ring */}
+          <div
+            className="absolute inset-0 flex items-center gap-3 px-4"
+            style={{ background: 'linear-gradient(90deg, rgba(13,13,26,0.6) 0%, transparent 100%)' }}
+          >
             <div className="relative flex-shrink-0" style={{ width: 38, height: 38 }}>
               <div className="chatbot-spin-ring-slow absolute rounded-full" style={{ inset: -2 }} />
               <div
@@ -387,7 +365,6 @@ export default function ChatBot() {
                 style={{ inset: 1.5, background: '#0d0d1a' }}
               >🤖</div>
             </div>
-
             <div>
               <p className="font-semibold text-sm" style={{ color: '#fb923c', letterSpacing: '0.03em' }}>
                 Portfolio AI
@@ -397,8 +374,6 @@ export default function ChatBot() {
                 Neural net online
               </p>
             </div>
-
-            {/* Decorative node dots top-right */}
             <div className="ml-auto flex gap-1.5 opacity-50">
               {['#fb923c', '#a855f7', '#3b82f6'].map((c, i) => (
                 <span key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: c }} />
@@ -407,10 +382,14 @@ export default function ChatBot() {
           </div>
         </div>
 
-        {/* ── Messages ── */}
+        {/* ── Messages — flex-1 + minHeight:0 lets it shrink and scroll internally ── */}
         <div
-          className="chatbot-messages flex-1 overflow-y-auto px-3 py-3 space-y-3"
-          style={{ background: '#07070f' }}
+          className="chatbot-messages overflow-y-auto px-3 py-3 space-y-3"
+          style={{
+            flex: '1 1 0',       /* ← grow to fill, but allow shrinking */
+            minHeight: 0,        /* ← critical: prevents flex child from overflowing */
+            background: '#07070f',
+          }}
         >
           {messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -472,29 +451,37 @@ export default function ChatBot() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* ── Input ── */}
+        {/* ── Input — flex-shrink-0 keeps it anchored at the bottom ── */}
         <div
-          className="px-3 py-3 flex gap-2 flex-shrink-0"
+          className="flex-shrink-0 px-3 py-3 flex gap-2 items-center"
           style={{
             background: '#0a0a16',
             borderTop: '1px solid rgba(251,146,60,0.12)',
           }}
         >
+          {/*
+            FIX: textarea has a fixed height so it never pushes the window taller.
+            overflow-y: auto lets the user scroll their typed text if it's long.
+            resize: none disables manual dragging.
+          */}
           <textarea
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask me anything..."
-            rows={1}
-            className="flex-1 resize-none text-sm outline-none transition-all duration-200 max-h-24 overflow-y-auto"
+            className="chatbot-input flex-1 text-sm outline-none"
             style={{
+              height: 40,              /* ← fixed height, never grows */
+              resize: 'none',          /* ← no manual resize handle */
+              overflow: 'hidden',      /* ← hides scrollbar; text just wraps */
               background: 'rgba(255,255,255,0.04)',
               border: '1px solid rgba(251,146,60,0.15)',
               borderRadius: 12,
               padding: '8px 12px',
               color: 'rgba(255,255,255,0.85)',
               scrollbarWidth: 'none',
+              lineHeight: '1.4',
             }}
             onFocus={(e) => (e.target.style.borderColor = 'rgba(251,146,60,0.45)')}
             onBlur={(e)  => (e.target.style.borderColor = 'rgba(251,146,60,0.15)')}
@@ -508,8 +495,6 @@ export default function ChatBot() {
               width: 36,
               height: 36,
               borderRadius: 10,
-              alignSelf: 'flex-end',
-              marginBottom: 2,
               background: input.trim() && !loading
                 ? 'linear-gradient(135deg, #fb923c, #a855f7)'
                 : 'rgba(255,255,255,0.07)',
@@ -527,10 +512,13 @@ export default function ChatBot() {
         </div>
 
         {/* Bottom glow line */}
-        <div style={{
-          height: 1,
-          background: 'linear-gradient(90deg, transparent, rgba(251,146,60,0.3), rgba(168,85,247,0.3), transparent)',
-        }} />
+        <div
+          className="flex-shrink-0"
+          style={{
+            height: 1,
+            background: 'linear-gradient(90deg, transparent, rgba(251,146,60,0.3), rgba(168,85,247,0.3), transparent)',
+          }}
+        />
       </div>
     </>
   );

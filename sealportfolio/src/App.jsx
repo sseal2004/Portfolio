@@ -12,6 +12,7 @@ import ContactMeMain from './components/contactMeSection/ContactMeMain';
 import FooterMain from './components/footer/FooterMain';
 import SexyLoader from './components/loader/SexyLoader';
 import ChatBot from './components/chatbot/ChatBot'; // 🤖 Chatbot component
+import CertificateMain from './components/certificates/CertificateMain'
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -55,6 +56,7 @@ function App() {
           <SkillSub />
           <ExperienceMain />
           <ProjectMain />
+          <CertificateMain />
           <ContactMeMain />
         </div>
         <FooterMain className="mt-0" />
