@@ -10,10 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@react-icons/all-files": "^4.1.0",
     "emailjs": "^4.0.3",
     "emailjs-com": "^3.2.0",
     "framer-motion": "^12.23.12",
+    "lucide-react": "^1.16.0",
     "motion": "^12.23.12",
     "react": "^19.1.0",
     "react-background-video-player": "^1.1.8",

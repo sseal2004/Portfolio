@@ -19,7 +19,7 @@ const AboutMeText = () => {
      <button
   className="mt-10 px-6 py-3 border border-orange text-darkblue dark:text-white hover:text-black dark:hover:text-cyan font-semibold rounded-full hover:bg-orange active:bg-[#e0b529] focus:bg-[#e0b529] transition-all duration-300 shadow-md hover:shadow-orange-lg animate-fade-in-up delay-200 md:self-start sm:self-center"
   onClick={() => {
-    document.getElementById("project")?.scrollIntoView({ behavior: "smooth" });
+    document.getElementById("projects")?.scrollIntoView({ behavior: "smooth" });
   }}
 >
   View Projects
