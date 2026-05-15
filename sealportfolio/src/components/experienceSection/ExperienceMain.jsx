@@ -1,6 +1,6 @@
 import React from 'react';
 
-import Timeline from './TimeLine';
+import Timeline from './Timeline';
 
 const ExperienceMain = () => {
   return (
