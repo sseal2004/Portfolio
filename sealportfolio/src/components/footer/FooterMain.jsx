@@ -39,7 +39,7 @@ const FooterMain = () => {
 
       {/* Copyright */}
       <p className="max-w-[1200px] mx-auto text-right mt-2 mb-12 text-sm text-darkblue dark:text-orange">
-        © 2025 Soumyadipta Seal | All Rights Reserved.
+        © 2026 Soumyadipta Seal | All Rights Reserved.
       </p>
     </footer>
   );
