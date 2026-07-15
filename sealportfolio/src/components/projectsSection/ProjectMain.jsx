@@ -31,10 +31,10 @@ const projects = [
   },
     
   {
-    name: 'Weather Forecast App',
-    image: '/image/project/chat1.png',
-    link: 'https://weather-frontend-rho-nine.vercel.app/',
-    sourcecode: 'https://github.com/sseal2004/weather_frontend'
+    name: 'Real time AI- Weather Forecast App',
+    image: '/image/project/weather.png',
+    link: 'https://weather-app-woad-eight-36.vercel.app/',
+    sourcecode: 'https://github.com/sseal2004/Weather_App'
   },
   
 ]
