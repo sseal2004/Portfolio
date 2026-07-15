@@ -29,13 +29,21 @@ const projects = [
     link: 'https://chat-buddies.vercel.app/',
     sourcecode: 'https://chat-app-x2ht.onrender.com/'
   },
-    
+  {
+    name: 'Krishi Predict(A real time E-commerce Crop Yield App)',
+    image: '/image/project/crop.png',
+    link: 'https://krishi-predict-ji23.vercel.app/',
+    sourcecode: 'https://github.com/sseal2004/KrishiPredict'
+  },
+      
   {
     name: 'Real time AI- Weather Forecast App',
     image: '/image/project/weather.png',
     link: 'https://weather-app-woad-eight-36.vercel.app/',
     sourcecode: 'https://github.com/sseal2004/Weather_App'
   },
+  
+
   
 ]
 
