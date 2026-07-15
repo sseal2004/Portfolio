@@ -1,447 +1,322 @@
 import { useEffect, useState, useRef } from "react";
 
-const ORBS = [
-  { size: 320, x: "72%", y: "10%", color: "#6366f1", blur: 90, opacity: 0.13, dur: 18 },
-  { size: 260, x: "-5%", y: "55%", color: "#06b6d4", blur: 80, opacity: 0.11, dur: 23 },
-  { size: 200, x: "55%", y: "68%", color: "#8b5cf6", blur: 70, opacity: 0.10, dur: 15 },
-  { size: 150, x: "20%", y: "5%",  color: "#22d3ee", blur: 60, opacity: 0.08, dur: 20 },
-];
+/**
+ * INFERNO LOADER
+ * Signature element: a molten 3D dice-cube, cracks glowing hotter as it loads,
+ * encircled by a coiling ember-serpent whose body burns in as progress advances.
+ * Rising embers + a lava-pit glow ground the whole thing in one coherent "forge" world.
+ */
 
-const DOTS = Array.from({ length: 55 }, (_, i) => ({
-  id: i,
-  x: Math.sin(i * 2.3) * 50 + 50,
-  y: Math.cos(i * 1.7) * 50 + 50,
-  size: 1.5 + (i % 3) * 1,
-  delay: (i * 0.11) % 4,
-  dur: 3 + (i % 5),
-}));
+const EMBERS = Array.from({ length: 40 }, (_, i) => {
+  const rand = (n) => ((Math.sin(i * n) * 43758.5453) % 1 + 1) % 1;
+  return {
+    id: i,
+    x: rand(12.9898) * 100,
+    size: 2 + rand(78.233) * 5,
+    delay: rand(45.164) * 6,
+    dur: 4 + rand(94.673) * 5,
+    drift: (rand(33.1) - 0.5) * 60,
+    hue: rand(5.5) > 0.5 ? "#ff6a1a" : "#ffb020",
+  };
+});
 
-const HELIX_POINTS = 28;
+// dice pip layouts on a 3x3 grid (row, col) 0-indexed
+const PIPS = {
+  1: [[1, 1]],
+  2: [[0, 0], [2, 2]],
+  3: [[0, 0], [1, 1], [2, 2]],
+  4: [[0, 0], [0, 2], [2, 0], [2, 2]],
+  5: [[0, 0], [0, 2], [1, 1], [2, 0], [2, 2]],
+  6: [[0, 0], [0, 2], [1, 0], [1, 2], [2, 0], [2, 2]],
+};
 
-export default function PortfolioLoader({ onComplete }) {
+function Face({ n, transform, glow }) {
+  return (
+    <div style={{
+      position: "absolute",
+      width: 108, height: 108,
+      left: -54, top: -54,
+      background: "linear-gradient(155deg, #2a1006 0%, #170905 60%, #0d0503 100%)",
+      border: "1px solid rgba(255,140,60,0.35)",
+      borderRadius: 10,
+      transform,
+      boxShadow: `inset 0 0 18px rgba(0,0,0,0.6), 0 0 ${14 + glow * 40}px rgba(255,${90 + glow * 60},${20 + glow * 40},${0.35 + glow * 0.5})`,
+      display: "grid",
+      gridTemplateRows: "repeat(3, 1fr)",
+      gridTemplateColumns: "repeat(3, 1fr)",
+      padding: 14,
+      boxSizing: "border-box",
+    }}>
+      {/* molten crack overlay */}
+      <svg viewBox="0 0 108 108" style={{ position: "absolute", inset: 0, opacity: 0.5 + glow * 0.5, mixBlendMode: "screen" }}>
+        <path d="M6,20 L34,32 L28,54 L58,50 L64,80 L100,92" stroke="url(#crackGrad)" strokeWidth={1.4 + glow * 1.6} fill="none" strokeLinecap="round" />
+      </svg>
+      {PIPS[n].map(([r, c], idx) => (
+        <div key={idx} style={{
+          gridRow: r + 1, gridColumn: c + 1,
+          width: 14, height: 14, borderRadius: "50%",
+          justifySelf: "center", alignSelf: "center",
+          background: `radial-gradient(circle at 35% 30%, #fff3d6, #ffb020 45%, #ff4d1a 85%)`,
+          boxShadow: `0 0 ${6 + glow * 16}px rgba(255,150,40,${0.6 + glow * 0.4})`,
+        }} />
+      ))}
+    </div>
+  );
+}
+
+export default function InfernoLoader({ onComplete }) {
   const [tick, setTick] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [phase, setPhase] = useState("in");   // "in" | "run" | "out"
-  const [lettersDone, setLettersDone] = useState(false);
+  const [phase, setPhase] = useState("in");
+  const [headPos, setHeadPos] = useState({ x: 0, y: 0 });
   const rafRef = useRef(null);
-  const startRef = useRef(null);
+  const pathRef = useRef(null);
 
-  const LABEL = "Loading portfolio";
-  const LETTERS = LABEL.split("");
-
-  useEffect(() => {
-    const t = setTimeout(() => setLettersDone(true), LETTERS.length * 60 + 400);
-    return () => clearTimeout(t);
-  }, []);
+  const TITLE = "Portfolio";
+  const SUB = "forging something extraordinary";
 
   useEffect(() => {
     let frame;
-    const loop = (ts) => {
-      setTick(ts);
-      frame = requestAnimationFrame(loop);
-    };
+    const loop = (ts) => { setTick(ts); frame = requestAnimationFrame(loop); };
     frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
+    const t = setTimeout(() => setPhase("run"), 500);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
     if (phase !== "run") return;
     const start = performance.now();
-    const dur = 2200;
+    const dur = 2800;
     const animate = (now) => {
       const p = Math.min((now - start) / dur, 1);
       setProgress(p);
       if (p < 1) rafRef.current = requestAnimationFrame(animate);
       else {
         setPhase("out");
-        setTimeout(() => onComplete?.(), 700);
+        setTimeout(() => onComplete?.(), 800);
       }
     };
     rafRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(rafRef.current);
   }, [phase]);
 
-  useEffect(() => {
-    if (lettersDone && phase === "in") {
-      setTimeout(() => setPhase("run"), 200);
-    }
-  }, [lettersDone, phase]);
-
   const t = tick / 1000;
-  const easedProgress = progress < 0.5
-    ? 2 * progress * progress
-    : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+  const eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+  const pip = Math.min(6, Math.max(1, Math.ceil(eased * 6) || 1));
+
+  // serpent path length reveal + head tracking
+  const PATH_D = "M40,190 C 10,150 10,90 45,60 C 80,30 140,30 175,55 C 215,84 215,140 175,168 C 145,190 100,190 78,168 C 60,150 60,128 78,118 C 95,108 118,112 122,130";
+  useEffect(() => {
+    if (pathRef.current) {
+      const len = pathRef.current.getTotalLength();
+      const pt = pathRef.current.getPointAtLength(len * eased);
+      setHeadPos({ x: pt.x, y: pt.y });
+    }
+  }, [eased]);
+
+  const rx = 20 + Math.sin(t * 0.4) * 12;
+  const ry = t * 26;
 
   const containerStyle = {
-    position: "fixed",
-    inset: 0,
-    zIndex: 9999,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#080a10",
+    position: "fixed", inset: 0, zIndex: 9999,
+    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+    background: "radial-gradient(ellipse at 50% 75%, #3a1206 0%, #170905 45%, #060302 80%)",
     overflow: "hidden",
     opacity: phase === "out" ? 0 : 1,
-    transition: phase === "out" ? "opacity 0.6s ease" : "none",
+    transform: phase === "out" ? "scale(1.06)" : "scale(1)",
+    transition: phase === "out" ? "opacity 0.8s ease, transform 0.95s ease" : "none",
   };
 
   return (
     <div style={containerStyle}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Jost:wght@300;400;500&display=swap');
 
-        @keyframes floatOrb {
-          0%,100% { transform: translateY(0px) scale(1); }
-          50% { transform: translateY(-28px) scale(1.04); }
+        @keyframes cubeSpin {
+          0%   { transform: rotateX(-24deg) rotateY(0deg); }
+          100% { transform: rotateX(-24deg) rotateY(360deg); }
         }
-        @keyframes twinkle {
-          0%,100% { opacity: 0.12; transform: scale(1); }
-          50% { opacity: 0.55; transform: scale(1.4); }
+        @keyframes cubeBob {
+          0%,100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
         }
-        @keyframes scanline {
-          0% { transform: translateY(-100%); }
-          100% { transform: translateY(100vh); }
+        @keyframes emberRise {
+          0%   { transform: translate(0,0) scale(0.6); opacity: 0; }
+          10%  { opacity: 1; }
+          100% { transform: translate(var(--drift), -420px) scale(1.1); opacity: 0; }
         }
-        @keyframes pulseRing {
-          0% { transform: scale(0.92); opacity: 0.5; }
-          50% { transform: scale(1.06); opacity: 0.15; }
-          100% { transform: scale(0.92); opacity: 0.5; }
+        @keyframes lavaPulse {
+          0%,100% { opacity: 0.55; transform: scale(1); }
+          50% { opacity: 0.85; transform: scale(1.08); }
         }
-        @keyframes letterDrop {
-          0% { opacity: 0; transform: translateY(-14px); filter: blur(6px); }
-          100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+        @keyframes titleBurn {
+          0% { opacity: 0; letter-spacing: 0.4em; filter: blur(12px); }
+          100% { opacity: 1; letter-spacing: 0.05em; filter: blur(0); }
         }
-        @keyframes statusBlink {
-          0%,49% { opacity: 1; }
-          50%,100% { opacity: 0; }
+        @keyframes flicker {
+          0%, 100% { background-position: 0% center; }
+          50% { background-position: 100% center; }
         }
-        @keyframes countUp {
-          from { opacity: 0.3; }
-          to { opacity: 1; }
+        @keyframes subFade {
+          0% { opacity: 0; transform: translateY(6px); }
+          100% { opacity: 0.6; transform: translateY(0); }
         }
-        @keyframes glitch1 {
-          0%,94%,100% { clip-path: none; transform: none; }
-          95% { clip-path: inset(30% 0 40% 0); transform: translate(-3px,0); }
-          97% { clip-path: inset(60% 0 10% 0); transform: translate(3px,0); }
-        }
-        @keyframes glitch2 {
-          0%,96%,100% { clip-path: none; transform: none; opacity: 0; }
-          97% { clip-path: inset(20% 0 60% 0); transform: translate(4px,0); opacity: 0.7; }
-          99% { clip-path: inset(70% 0 5% 0); transform: translate(-4px,0); opacity: 0.7; }
+        @keyframes headGlow {
+          0%,100% { r: 6; opacity: 1; }
+          50% { r: 8; opacity: 0.75; }
         }
       `}</style>
 
-      {/* ── Ambient orbs ── */}
-      {ORBS.map((o, i) => (
-        <div key={i} style={{
-          position: "absolute",
-          width: o.size,
-          height: o.size,
-          left: o.x,
-          top: o.y,
-          borderRadius: "50%",
-          background: o.color,
-          opacity: o.opacity,
-          filter: `blur(${o.blur}px)`,
-          animation: `floatOrb ${o.dur}s ease-in-out ${i * 3.1}s infinite`,
-          pointerEvents: "none",
-        }} />
-      ))}
+      <svg width="0" height="0" style={{ position: "absolute" }}>
+        <defs>
+          <linearGradient id="crackGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#fff3d6" />
+            <stop offset="50%" stopColor="#ffb020" />
+            <stop offset="100%" stopColor="#ff2b1f" />
+          </linearGradient>
+          <linearGradient id="serpentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ffe9b0" />
+            <stop offset="45%" stopColor="#ffb020" />
+            <stop offset="100%" stopColor="#ff2b1f" />
+          </linearGradient>
+          <radialGradient id="ringTitle" cx="50%" cy="50%" r="60%">
+            <stop offset="0%" stopColor="#fff3d6" />
+            <stop offset="100%" stopColor="#ff2b1f" />
+          </radialGradient>
+        </defs>
+      </svg>
 
-      {/* ── Star field ── */}
+      {/* lava pit glow at the base */}
+      <div style={{
+        position: "absolute", bottom: "8%", left: "50%", width: 520, height: 140,
+        transform: "translateX(-50%)", borderRadius: "50%",
+        background: "radial-gradient(ellipse, rgba(255,110,30,0.55) 0%, rgba(255,40,20,0.25) 45%, transparent 75%)",
+        filter: "blur(18px)",
+        animation: "lavaPulse 4s ease-in-out infinite",
+      }} />
+
+      {/* rising embers */}
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-        {DOTS.map((d) => (
-          <div key={d.id} style={{
-            position: "absolute",
-            left: `${d.x}%`,
-            top: `${d.y}%`,
-            width: d.size,
-            height: d.size,
-            borderRadius: "50%",
-            background: "#fff",
-            animation: `twinkle ${d.dur}s ease-in-out ${d.delay}s infinite`,
+        {EMBERS.map((e) => (
+          <div key={e.id} style={{
+            position: "absolute", left: `${e.x}%`, bottom: "10%",
+            width: e.size, height: e.size, borderRadius: "50%",
+            background: e.hue, boxShadow: `0 0 ${e.size * 3}px ${e.hue}`,
+            "--drift": `${e.drift}px`,
+            animation: `emberRise ${e.dur}s ease-in ${e.delay}s infinite`,
           }} />
         ))}
       </div>
 
-      {/* ── Scanline ── */}
-      <div style={{
-        position: "absolute",
-        inset: 0,
-        overflow: "hidden",
-        pointerEvents: "none",
-        opacity: 0.03,
-      }}>
-        <div style={{
-          position: "absolute",
-          left: 0, right: 0,
-          height: "120px",
-          background: "linear-gradient(to bottom, transparent, rgba(99,102,241,0.8), transparent)",
-          animation: "scanline 5s linear infinite",
-        }} />
-      </div>
-
-      {/* ── Grid overlay ── */}
+      {/* vignette */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
-        backgroundImage: `
-          linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px)
-        `,
-        backgroundSize: "48px 48px",
+        background: "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.6) 100%)",
       }} />
 
-      {/* ── Center composition ── */}
-      <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", gap: "2.5rem" }}>
+      {/* ── center composition ── */}
+      <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", gap: "2.4rem" }}>
 
-        {/* Helix + rings */}
-        <div style={{ position: "relative", width: 180, height: 180, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ position: "relative", width: 260, height: 260, display: "flex", alignItems: "center", justifyContent: "center" }}>
 
-          {/* Pulse rings */}
-          {[1, 0.7, 0.45].map((scale, i) => (
-            <div key={i} style={{
-              position: "absolute",
-              width: 160 * scale,
-              height: 160 * scale,
-              borderRadius: "50%",
-              border: `1px solid rgba(99,102,241,${0.35 - i * 0.1})`,
-              animation: `pulseRing ${2 + i * 0.7}s ease-in-out ${i * 0.4}s infinite`,
-            }} />
-          ))}
-
-          {/* DNA helix via SVG */}
-          <svg width="90" height="160" viewBox="0 0 90 160" style={{ position: "absolute" }}>
-            {Array.from({ length: HELIX_POINTS }, (_, i) => {
-              const progress_i = i / (HELIX_POINTS - 1);
-              const angle1 = progress_i * Math.PI * 3.5 + t * 1.4;
-              const angle2 = angle1 + Math.PI;
-              const x1 = 45 + Math.cos(angle1) * 28;
-              const x2 = 45 + Math.cos(angle2) * 28;
-              const y = 8 + progress_i * 144;
-              const z1 = Math.sin(angle1);
-              const z2 = Math.sin(angle2);
-              const r1 = Math.round(4 + Math.abs(z1) * 2.5);
-              const r2 = Math.round(4 + Math.abs(z2) * 2.5);
-              const op1 = 0.35 + Math.abs(z1) * 0.65;
-              const op2 = 0.35 + Math.abs(z2) * 0.65;
-              const isConnector = i % 4 === 0;
-              return (
-                <g key={i}>
-                  {isConnector && (
-                    <line
-                      x1={x1} y1={y} x2={x2} y2={y}
-                      stroke="rgba(99,102,241,0.3)"
-                      strokeWidth="0.8"
-                    />
-                  )}
-                  <circle cx={x1} cy={y} r={r1} fill={`rgba(99,102,241,${op1.toFixed(2)})`} />
-                  <circle cx={x2} cy={y} r={r2} fill={`rgba(6,182,212,${op2.toFixed(2)})`} />
-                </g>
-              );
-            })}
+          {/* coiling ember serpent — progress reveal */}
+          <svg width="260" height="260" viewBox="0 0 220 220" style={{ position: "absolute", top: 0, left: 0 }}>
+            <path
+              ref={pathRef}
+              d={PATH_D}
+              fill="none"
+              stroke="rgba(255,255,255,0.06)"
+              strokeWidth="7"
+              strokeLinecap="round"
+            />
+            <path
+              d={PATH_D}
+              fill="none"
+              stroke="url(#serpentGrad)"
+              strokeWidth="7"
+              strokeLinecap="round"
+              pathLength="1"
+              strokeDasharray="1"
+              strokeDashoffset={1 - eased}
+              style={{ filter: "drop-shadow(0 0 8px rgba(255,110,30,0.85))", transition: "stroke-dashoffset 0.1s linear" }}
+            />
+            {/* serpent head */}
+            {eased > 0.02 && (
+              <circle cx={headPos.x} cy={headPos.y} r="7" fill="#fff3d6" style={{ animation: "headGlow 1.1s ease-in-out infinite" }} />
+            )}
           </svg>
 
-          {/* Center glyph */}
+          {/* molten dice-cube, 3D */}
           <div style={{
-            position: "absolute",
-            width: 44,
-            height: 44,
-            borderRadius: "50%",
-            background: "rgba(99,102,241,0.15)",
-            border: "1px solid rgba(99,102,241,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontFamily: "'Space Mono', monospace",
-            fontSize: "13px",
-            color: "rgba(99,102,241,0.9)",
-            letterSpacing: "0.05em",
+            position: "relative", width: 108, height: 108,
+            perspective: 700,
+            animation: "cubeBob 3.4s ease-in-out infinite",
           }}>
-            {phase === "run" || phase === "out"
-              ? `${Math.round(easedProgress * 100)}%`
-              : "init"}
-          </div>
-        </div>
-
-        {/* ── Glitch title ── */}
-        <div style={{ position: "relative", lineHeight: 1 }}>
-          <div style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: "clamp(1.6rem, 5vw, 2.4rem)",
-            fontWeight: 600,
-            color: "#fff",
-            letterSpacing: "-0.02em",
-            animation: "glitch1 7s ease-in-out infinite",
-          }}>
-            Portfolio
-          </div>
-          <div style={{
-            position: "absolute",
-            inset: 0,
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: "clamp(1.6rem, 5vw, 2.4rem)",
-            fontWeight: 600,
-            color: "#6366f1",
-            letterSpacing: "-0.02em",
-            animation: "glitch2 7s ease-in-out infinite",
-          }}>
-            Portfolio
-          </div>
-        </div>
-
-        {/* ── Animated letters ── */}
-        <div style={{
-          display: "flex",
-          gap: "1px",
-          fontFamily: "'Space Mono', monospace",
-          fontSize: "11px",
-          letterSpacing: "0.22em",
-          textTransform: "uppercase",
-          color: "rgba(99,102,241,0.7)",
-        }}>
-          {LETTERS.map((char, i) => (
-            <span key={i} style={{
-              display: "inline-block",
-              opacity: 0,
-              animation: `letterDrop 0.4s ease forwards`,
-              animationDelay: `${i * 60}ms`,
+            <div style={{
+              position: "absolute", width: "100%", height: "100%",
+              transformStyle: "preserve-3d",
+              animation: "cubeSpin 10s linear infinite",
+              left: "50%", top: "50%",
             }}>
-              {char === " " ? "\u00A0" : char}
-            </span>
-          ))}
-          <span style={{
-            display: "inline-block",
-            width: "8px",
-            animation: "statusBlink 1s step-end infinite",
-            marginLeft: "2px",
-          }}>
-            _
-          </span>
-        </div>
-
-        {/* ── Progress bar ── */}
-        <div style={{ width: "240px", display: "flex", flexDirection: "column", gap: "8px" }}>
-          <div style={{
-            height: "2px",
-            borderRadius: "2px",
-            background: "rgba(255,255,255,0.06)",
-            overflow: "hidden",
-            position: "relative",
-          }}>
-            <div style={{
-              position: "absolute",
-              left: 0, top: 0, bottom: 0,
-              width: `${easedProgress * 100}%`,
-              background: "linear-gradient(90deg, #6366f1, #06b6d4)",
-              borderRadius: "2px",
-              transition: "width 0.05s linear",
-            }} />
-            {/* Shimmer on bar */}
-            <div style={{
-              position: "absolute",
-              left: 0, top: 0, bottom: 0,
-              width: `${easedProgress * 100}%`,
-              background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)",
-              backgroundSize: "80px 100%",
-              backgroundRepeat: "no-repeat",
-              backgroundPositionX: `${(t % 2) / 2 * 100}%`,
-              borderRadius: "2px",
-            }} />
+              <Face n={pip}                 transform="translate(-50%,-50%) translateZ(54px)" glow={eased} />
+              <Face n={7 - pip}              transform="translate(-50%,-50%) rotateY(180deg) translateZ(54px)" glow={eased} />
+              <Face n={((pip + 1) % 6) + 1}  transform="translate(-50%,-50%) rotateY(90deg) translateZ(54px)" glow={eased} />
+              <Face n={((pip + 4) % 6) + 1}  transform="translate(-50%,-50%) rotateY(-90deg) translateZ(54px)" glow={eased} />
+              <Face n={((pip + 2) % 6) + 1}  transform="translate(-50%,-50%) rotateX(90deg) translateZ(54px)" glow={eased} />
+              <Face n={((pip + 3) % 6) + 1}  transform="translate(-50%,-50%) rotateX(-90deg) translateZ(54px)" glow={eased} />
+            </div>
           </div>
 
-          {/* Status line */}
+          {/* percentage, offset below cube */}
           <div style={{
-            display: "flex",
-            justifyContent: "space-between",
-            fontFamily: "'Space Mono', monospace",
-            fontSize: "9px",
-            color: "rgba(255,255,255,0.25)",
-            letterSpacing: "0.1em",
+            position: "absolute", bottom: -6,
+            fontFamily: "'Jost', sans-serif", fontWeight: 500, fontSize: "1rem",
+            color: "#ffdca8", textShadow: "0 0 16px rgba(255,110,30,0.8)",
+            letterSpacing: "0.08em",
           }}>
-            <span>{
-              progress < 0.25 ? "// init modules" :
-              progress < 0.5  ? "// fetch assets" :
-              progress < 0.75 ? "// build canvas" :
-              progress < 0.95 ? "// finalize" :
-                                "// done"
-            }</span>
-            <span>{Math.round(easedProgress * 100)}.00%</span>
+            {Math.round(eased * 100)}%
           </div>
         </div>
 
-        {/* ── Corner badges ── */}
-        <div style={{ display: "flex", gap: "8px" }}>
-          {["sys", "net", "gpu"].map((label, i) => {
-            const val = Math.round(30 + Math.sin(t * (1.2 + i * 0.4) + i) * 20 + 20);
-            return (
-              <div key={label} style={{
-                padding: "5px 10px",
-                border: "1px solid rgba(99,102,241,0.2)",
-                borderRadius: "4px",
-                background: "rgba(99,102,241,0.05)",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "2px",
-              }}>
-                <span style={{
-                  fontFamily: "'Space Mono', monospace",
-                  fontSize: "8px",
-                  color: "rgba(255,255,255,0.2)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.12em",
-                }}>
-                  {label}
-                </span>
-                <span style={{
-                  fontFamily: "'Space Mono', monospace",
-                  fontSize: "12px",
-                  color: i === 0 ? "rgba(99,102,241,0.8)" : i === 1 ? "rgba(6,182,212,0.8)" : "rgba(139,92,246,0.8)",
-                  fontWeight: 600,
-                }}>
-                  {val}%
-                </span>
-              </div>
-            );
-          })}
+        {/* title */}
+        <div style={{ textAlign: "center" }}>
+          <div style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontWeight: 400,
+            fontSize: "clamp(2.8rem, 8vw, 4.4rem)",
+            letterSpacing: "0.05em",
+            background: "linear-gradient(90deg, #fff3d6, #ffb020, #ff2b1f, #ffb020, #fff3d6)",
+            backgroundSize: "250% auto",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            color: "transparent",
+            animation: "titleBurn 1.2s ease forwards, flicker 3.5s ease-in-out 1.2s infinite",
+          }}>
+            {TITLE}
+          </div>
+          <div style={{
+            marginTop: "0.5rem",
+            fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: "0.78rem",
+            letterSpacing: "0.3em", textTransform: "uppercase",
+            color: "rgba(255,210,160,0.6)",
+            opacity: 0,
+            animation: "subFade 1s ease 0.7s forwards",
+          }}>
+            {SUB}
+          </div>
         </div>
       </div>
 
-      {/* ── Corner decorations ── */}
-      {[
-        { top: 24, left: 24 },
-        { top: 24, right: 24 },
-        { bottom: 24, left: 24 },
-        { bottom: 24, right: 24 },
-      ].map((pos, i) => {
-        const borders = {
-          borderTop: i < 2 ? "1px solid rgba(99,102,241,0.35)" : "none",
-          borderBottom: i >= 2 ? "1px solid rgba(99,102,241,0.35)" : "none",
-          borderLeft: i % 2 === 0 ? "1px solid rgba(99,102,241,0.35)" : "none",
-          borderRight: i % 2 !== 0 ? "1px solid rgba(99,102,241,0.35)" : "none",
-        };
-        return (
-          <div key={i} style={{
-            position: "absolute",
-            ...pos,
-            width: 22, height: 22,
-            ...borders,
-          }} />
-        );
-      })}
-
-      {/* ── Bottom version ── */}
       <div style={{
-        position: "absolute",
-        bottom: 28,
-        fontFamily: "'Space Mono', monospace",
-        fontSize: "9px",
-        color: "rgba(255,255,255,0.12)",
-        letterSpacing: "0.2em",
-        textTransform: "uppercase",
+        position: "absolute", bottom: 28,
+        fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: "0.65rem",
+        color: "rgba(255,200,150,0.22)", letterSpacing: "0.25em", textTransform: "uppercase",
       }}>
-        v2025 · crafted with intent
+        est. 2025 · forged with fire
       </div>
     </div>
   );

@@ -7,10 +7,11 @@ import { MdDarkMode, MdLightMode } from 'react-icons/md';
 
 const NavbarMain = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => {
-    const stored = localStorage.getItem('theme');
-    return stored === 'dark';
-  });
+
+  // Every reload starts in dark mode, full stop — no localStorage check on init.
+  // Light only exists as a live, in-session choice: it resets back to dark
+  // the moment the page is reloaded.
+  const [darkMode, setDarkMode] = useState(true);
 
   const darkVideoRef = useRef(null);
   const lightVideoRef = useRef(null);
@@ -20,9 +21,7 @@ const NavbarMain = () => {
   };
 
   const toggleDarkMode = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    localStorage.setItem('theme', newMode ? 'dark' : 'light');
+    setDarkMode((prev) => !prev);
   };
 
   useEffect(() => {
@@ -175,5 +174,3 @@ const NavbarMain = () => {
 };
 
 export default NavbarMain;
-
-

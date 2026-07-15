@@ -18,7 +18,8 @@ const certificates = [
   { title: 'AI-ML Virtual Internship', date: 'Date: September 15 2025', image: '/image/certificates/aimleduskill.jpg' },
 ]
 
-const SLIDE_INTERVAL = 3000
+// ⏩ Faster autoplay: was 3000ms, now 2000ms
+const SLIDE_INTERVAL = 2000
 const PER_VIEW = 3
 
 const CertificateMain = () => {
@@ -87,8 +88,12 @@ const CertificateMain = () => {
           {/* Track */}
           <div className="overflow-hidden">
             <div
-              className="flex transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
-              style={{ transform: `translateX(-${current * (100 / PER_VIEW)}%)` }}
+              className="flex transition-transform ease-[cubic-bezier(0.22,1,0.36,1)]"
+              style={{
+                transform: `translateX(-${current * (100 / PER_VIEW)}%)`,
+                transitionDuration: '650ms',
+                willChange: 'transform',
+              }}
             >
               {certificates.map((cert, index) => (
                 <div
