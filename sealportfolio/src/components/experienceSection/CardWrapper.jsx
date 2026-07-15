@@ -1,8 +1,25 @@
-import React, { useRef } from 'react';
-import { motion, useMotionValue, useTransform } from 'framer-motion';
+import React, { useRef, useState } from 'react';
+import { motion, useMotionValue, useTransform, useScroll, useMotionValueEvent } from 'framer-motion';
 
 const MAX_ROTATE = 100;
 const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+// How far / how tilted the card starts from, per scroll direction.
+// Scrolling down → card rises in from below.
+// Scrolling up (reverse) → card drops in from above, tilted the opposite way.
+const cardVariants = {
+  hidden: (direction) => ({
+    opacity: 0,
+    y: direction === 'up' ? -60 : 60,
+    rotateZ: direction === 'up' ? 4 : -4,
+  }),
+  visible: {
+    opacity: 1,
+    y: 0,
+    rotateZ: 0,
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+  },
+};
 
 const CardWrapper = ({ children, borderColor }) => {
   const ref = useRef(null);
@@ -11,6 +28,20 @@ const CardWrapper = ({ children, borderColor }) => {
 
   const rotateX = useTransform(y, [-50, 50], [MAX_ROTATE, -MAX_ROTATE]);
   const rotateY = useTransform(x, [-50, 50], [-MAX_ROTATE, MAX_ROTATE]);
+
+  // Track scroll direction so the entrance animation can reverse itself.
+  const [scrollDirection, setScrollDirection] = useState('down');
+  const lastScrollY = useRef(0);
+  const { scrollY } = useScroll();
+
+  useMotionValueEvent(scrollY, 'change', (latest) => {
+    if (latest > lastScrollY.current) {
+      setScrollDirection('down');
+    } else if (latest < lastScrollY.current) {
+      setScrollDirection('up');
+    }
+    lastScrollY.current = latest;
+  });
 
   const handleMouseMove = (e) => {
     if (isMobile) return;
@@ -35,15 +66,20 @@ const CardWrapper = ({ children, borderColor }) => {
         perspective: 1000,
         cursor: 'url(/cursor-pointer.png), pointer',
       }}
+      custom={scrollDirection}
+      variants={cardVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: false, amount: 0.3 }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className="transition-transform duration-300"
     >
       <div
-  className={`relative overflow-hidden bg-white/80 dark:bg-white/5 backdrop-blur-lg border ${borderColor} rounded-2xl p-6 shadow-lg 
+        className={`relative overflow-hidden bg-white/80 dark:bg-white/5 backdrop-blur-lg border ${borderColor} rounded-2xl p-6 shadow-lg 
     hover:shadow-[0_0_25px_rgba(255,0,255,0.5)] 
     dark:hover:shadow-[0_0_25px_rgba(240,169,79,0.5)]`}
-    >
+      >
         {/* Optional inner highlight — disabled for now */}
         {/* <div className="absolute inset-0 bg-gradient-to-br from-purple-700/10 to-purple-400/10 pointer-events-none" /> */}
 
