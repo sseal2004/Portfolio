@@ -25,7 +25,7 @@ const projects = [
   },
   {
     name: 'Auron Chat (Real Time Chatting App And AI Assistant.)',
-    image: '/image/project/chat1.png',
+    image: '/image/project/chat2.png',
     link: 'https://chat-buddies.vercel.app/',
     sourcecode: 'https://chat-app-x2ht.onrender.com/'
   },
