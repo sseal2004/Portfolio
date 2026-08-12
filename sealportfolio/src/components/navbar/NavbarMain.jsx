@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import NavbarLogo from './NavbarLogo';
 import NavbarLinks from './NavbarLinks';
 import NavbarBtn from './NavbarBtn';
 import { GiHamburgerMenu } from 'react-icons/gi';
 import { MdDarkMode, MdLightMode } from 'react-icons/md';
+import DarkBackground from './DarkBackground';
+import LightBackground from './LightBackground';
 
 const NavbarMain = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -12,9 +14,6 @@ const NavbarMain = () => {
   // Light only exists as a live, in-session choice: it resets back to dark
   // the moment the page is reloaded.
   const [darkMode, setDarkMode] = useState(true);
-
-  const darkVideoRef = useRef(null);
-  const lightVideoRef = useRef(null);
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
@@ -32,59 +31,23 @@ const NavbarMain = () => {
     }
   }, [darkMode]);
 
-  useEffect(() => {
-    const darkVideo = darkVideoRef.current;
-    const lightVideo = lightVideoRef.current;
-
-    const ensurePlaying = (video) => {
-      if (video && video.paused) {
-        video.play().catch(() => {});
-      }
-    };
-
-    if (darkVideo) {
-      darkVideo.addEventListener('pause', () => ensurePlaying(darkVideo));
-      darkVideo.playbackRate = 1;
-    }
-
-    if (lightVideo) {
-      lightVideo.addEventListener('pause', () => ensurePlaying(lightVideo));
-      lightVideo.playbackRate = 1;
-    }
-
-    return () => {
-      if (darkVideo) darkVideo.removeEventListener('pause', () => ensurePlaying(darkVideo));
-      if (lightVideo) lightVideo.removeEventListener('pause', () => ensurePlaying(lightVideo));
-    };
-  }, []);
-
   return (
     <>
-      {/* Background Videos */}
+      {/* Background — hardcoded (no video) so it never lags.
+          IMPORTANT: only the active background is mounted. Both
+          DarkBackground and LightBackground run a real animation
+          loop (WebGL/canvas), and their internal pause logic only
+          checks document.hidden (tab-level visibility) — it has no
+          way to know it's been hidden via a CSS "display: none"
+          wrapper. Keeping both mounted and toggling them with
+          Tailwind's dark: classes meant the inactive one kept
+          rendering full-tilt off-screen, forever, eating the main
+          thread and making the toggle itself feel laggy/stuck.
+          Conditionally rendering here means the one that's swapped
+          out actually unmounts, so its useEffect cleanup runs
+          (cancelAnimationFrame + dispose) and it truly goes idle. */}
       <div className="fixed top-0 left-0 w-full h-full -z-10 overflow-hidden">
-        {/* Light Mode Video */}
-        <video
-          ref={lightVideoRef}
-          className="absolute top-0 left-0 w-full h-full object-cover block dark:hidden"
-          autoPlay
-          loop
-          muted
-          playsInline
-        >
-          <source src="/video/light_bg.mp4" type="video/mp4" />
-        </video>
-
-        {/* Dark Mode Video */}
-        <video
-          ref={darkVideoRef}
-          className="absolute top-0 left-0 w-full h-full object-cover hidden dark:block"
-          autoPlay
-          loop
-          muted
-          playsInline
-        >
-          <source src="/video/dark_bg.mp4" type="video/mp4" />
-        </video>
+        {darkMode ? <DarkBackground /> : <LightBackground />}
       </div>
 
       {/* Navbar */}

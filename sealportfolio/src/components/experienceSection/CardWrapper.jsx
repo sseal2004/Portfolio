@@ -21,7 +21,22 @@ const cardVariants = {
   },
 };
 
-const CardWrapper = ({ children, borderColor }) => {
+/**
+ * CardWrapper
+ * ---------------------------------------------------------------
+ * glowLight / glowDark let each timeline entry carry its own accent
+ * color instead of every card sharing one fuchsia/orange hover glow.
+ * They're passed in as raw rgba() strings and wired up as CSS custom
+ * properties, so the actual Tailwind classes stay static strings
+ * (`shadow-[0_0_25px_var(--glow-light)]`) and remain JIT-safe — only
+ * the variable's *value* changes per instance, not the class name.
+ */
+const CardWrapper = ({
+  children,
+  borderColor,
+  glowLight = 'rgba(240,169,79,0.45)',
+  glowDark = 'rgba(240,169,79,0.5)',
+}) => {
   const ref = useRef(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -65,6 +80,8 @@ const CardWrapper = ({ children, borderColor }) => {
         rotateY,
         perspective: 1000,
         cursor: 'url(/cursor-pointer.png), pointer',
+        '--glow-light': glowLight,
+        '--glow-dark': glowDark,
       }}
       custom={scrollDirection}
       variants={cardVariants}
@@ -76,14 +93,22 @@ const CardWrapper = ({ children, borderColor }) => {
       className="transition-transform duration-300"
     >
       <div
-        className={`relative overflow-hidden bg-white/80 dark:bg-white/5 backdrop-blur-lg border ${borderColor} rounded-2xl p-6 shadow-lg 
-    hover:shadow-[0_0_25px_rgba(255,0,255,0.5)] 
-    dark:hover:shadow-[0_0_25px_rgba(240,169,79,0.5)]`}
+        className={`relative overflow-hidden bg-white/80 dark:bg-white/5 backdrop-blur-lg border ${borderColor} rounded-2xl p-6
+    shadow-lg transition-shadow duration-300
+    hover:shadow-[0_0_25px_var(--glow-light)]
+    dark:hover:shadow-[0_0_25px_var(--glow-dark)]`}
       >
-        {/* Optional inner highlight — disabled for now */}
-        {/* <div className="absolute inset-0 bg-gradient-to-br from-purple-700/10 to-purple-400/10 pointer-events-none" /> */}
+        {/* faint corner highlight, tinted by the card's own accent */}
+        <div
+          className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-2xl pointer-events-none opacity-60 dark:opacity-40"
+          style={{ background: 'var(--glow-light)' }}
+        />
+        <div
+          className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-2xl pointer-events-none opacity-0 dark:opacity-50"
+          style={{ background: 'var(--glow-dark)' }}
+        />
 
-        {children}
+        <div className="relative">{children}</div>
       </div>
     </motion.div>
   );

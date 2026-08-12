@@ -1,9 +1,29 @@
 /* timeline-theme.css */
 
+/* Light mode: a single restrained amber-to-rose spine, not a rainbow */
 .vertical-timeline::before {
-  background: fuchsia; /* Light mode */
+  background: linear-gradient(to bottom, rgba(180,83,9,0.55), rgba(190,24,93,0.4));
+  width: 2px;
 }
 
+/* Dark mode: a quiet cyan spine with a faint glow — one accent, not three */
 .dark .vertical-timeline::before {
-  background: white; /* Dark mode */
+  background: linear-gradient(to bottom, rgba(34,211,238,0.55), rgba(163,230,53,0.35));
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.25);
+  width: 2px;
+}
+
+/* Slightly tighten the arrow color so it doesn't clash with transparent cards */
+.vertical-timeline-element-content-arrow {
+  border-right: 7px solid rgba(255, 255, 255, 0.6) !important;
+}
+
+.dark .vertical-timeline-element-content-arrow {
+  border-right: 7px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Date label: a bit more presence than the library default */
+.vertical-timeline-element-date {
+  font-weight: 600;
+  opacity: 0.85;
 }
