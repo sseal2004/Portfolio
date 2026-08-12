@@ -1,0 +1,238 @@
+text,intent
+hi,greeting
+hello,greeting
+hey there,greeting
+good morning,greeting
+good evening,greeting
+hey,greeting
+is anyone there,greeting
+hello bot,greeting
+hi there,greeting
+yo,greeting
+who are you,about
+tell me about yourself,about
+introduce yourself,about
+what do you do,about
+give me an introduction,about
+tell me about soumyadipta,about
+who is soumyadipta seal,about
+what is your background,about
+tell me your profile,about
+brief about you,about
+what are your skills,skills
+what technologies do you know,skills
+what programming languages do you know,skills
+what is your tech stack,skills
+tell me your skill set,skills
+what languages do you code in,skills
+do you know react,skills
+do you know python,skills
+what frameworks do you use,skills
+what databases do you work with,skills
+what tools do you use,skills
+are you good at machine learning,skills
+do you know java,skills
+what is your expertise,skills
+list your technical skills,skills
+what web development skills do you have,skills
+what ai ml skills do you have,skills
+do you know android development,skills
+what cloud tools do you know,skills
+what is your work experience,experience
+tell me about your internships,experience
+where have you worked,experience
+what companies have you interned at,experience
+tell me about euphoria genx,experience
+tell me about prodigy infotech,experience
+tell me about eduskill internship,experience
+what did you do at your internship,experience
+describe your professional experience,experience
+have you worked as a software developer,experience
+what was your role at euphoria genx techpark,experience
+what did you build during your ai internship,experience
+tell me about your mern stack internship,experience
+how many internships have you done,experience
+what projects have you built,projects
+tell me about your projects,projects
+show me your portfolio projects,projects
+what is audiovisualemotion project,projects
+tell me about heart disease prediction project,projects
+what is the real time chat app project,projects
+tell me about aurons blog platform,projects
+what is medcare project,projects
+tell me about lpglot project,projects
+what is krishi predict,projects
+tell me about the weather forecast app,projects
+what is auron chat,projects
+describe your emotion detection system,projects
+tell me about your machine learning projects,projects
+tell me about your full stack projects,projects
+have you built any chat application,projects
+have you built any blogging platform,projects
+have you presented any research paper,projects
+what is your diabetes risk prediction system,projects
+where did you study,education
+tell me about your education,education
+which college do you go to,education
+what is your cgpa,education
+what degree are you pursuing,education
+tell me about your school,education
+which university are you from,education
+what is narula institute of technology,education
+what year are you in college,education
+what are your achievements,achievements
+tell me your accomplishments,achievements
+have you won any hackathon,achievements
+tell me about smart india hackathon,achievements
+have you published any patent,achievements
+tell me about your patent,achievements
+have you attended any tech fest,achievements
+tell me about ieee ciacon,achievements
+what awards have you won,achievements
+have you done any coding challenges,achievements
+tell me about your leetcode streak,achievements
+what certifications do you have,certifications
+tell me your certificates,certifications
+have you done any online courses,certifications
+what generative ai certification do you have,certifications
+tell me about your google certification,certifications
+how can i contact you,contact
+what is your email,contact
+what is your phone number,contact
+how do i reach you,contact
+give me your contact details,contact
+what is your email address,contact
+can i call you,contact
+share your contact information,contact
+where are you located,contact
+what city do you live in,contact
+what is your github,github
+show me your github profile,github
+what is your github username,github
+where can i see your code,github
+do you have a github account,github
+link to your github,github
+what is your linkedin,linkedin
+show me your linkedin profile,linkedin
+where can i connect with you on linkedin,linkedin
+link to your linkedin,linkedin
+do you have linkedin,linkedin
+thanks,thanks
+thank you,thanks
+thanks a lot,thanks
+appreciate it,thanks
+thank you so much,thanks
+bye,goodbye
+goodbye,goodbye
+see you later,goodbye
+talk to you later,goodbye
+exit,goodbye
+quit,goodbye
+what is your profession,profession
+what field are you in,profession
+what is your major,profession
+what do you study,profession
+are you a computer science student,profession
+what is your leadership experience,extracurricular
+have you led any team,extracurricular
+tell me about your extracurricular activities,extracurricular
+have you participated in programming contests,extracurricular
+tell me about kshitij fest,extracurricular
+what do you do outside academics,extracurricular
+have you led a hackathon team,extracurricular
+tell me about your college activities,extracurricular
+did you represent your college anywhere,extracurricular
+hiya,greeting
+howdy,greeting
+sup,greeting
+greetings,greeting
+namaste,greeting
+can you help me,greeting
+start,greeting
+what can you tell me,about
+give me a summary of your profile,about
+walk me through your resume,about
+what makes you a good candidate,about
+describe yourself in short,about
+what is your career objective,about
+tell me something about yourself,about
+what do you specialize in,skills
+which programming language are you most comfortable with,skills
+are you skilled in full stack development,skills
+do you know node js,skills
+do you know express js,skills
+do you know mongodb,skills
+what is your proficiency level in java,skills
+tell me about your database skills,skills
+do you know django,skills
+what git and github skills do you have,skills
+have you used postman,skills
+what is your core cs knowledge,skills
+what work have you done professionally,experience
+tell me about your job history,experience
+what was your role at prodigy infotech,experience
+what did you build at eduskill,experience
+describe your ai ml internship,experience
+tell me about your flask project at your internship,experience
+what did you learn during your internships,experience
+have you worked with restful apis professionally,experience
+tell me about your agile sprint experience,experience
+what work have you done with next js,experience
+what apps have you developed,projects
+tell me about your github projects,projects
+what have you built using mern stack,projects
+tell me about your ai projects,projects
+what is your best project,projects
+have you built any healthcare related project,projects
+have you built any iot project,projects
+have you built any agriculture tech project,projects
+have you built a weather app,projects
+show me a live demo of your work,projects
+what research paper have you presented,projects
+tell me about narula institute of technology,education
+what year did you complete your schooling,education
+tell me your class 12 percentage,education
+tell me your class 10 percentage,education
+which branch are you studying,education
+what year will you graduate,education
+tell me your notable accomplishments,achievements
+have you ranked in any hackathon,achievements
+tell me about project zenfit,achievements
+have you filed a patent,achievements
+what competitions have you participated in,achievements
+tell me about hack o nit,achievements
+have you presented at any conference,achievements
+what online courses have you completed,certifications
+tell me about your nptel certification,certifications
+do you have any ibm certification,certifications
+are you postman certified,certifications
+what generative ai course have you done,certifications
+list your certifications,certifications
+email me,contact
+give me your number,contact
+send me your details,contact
+how do i email you,contact
+what is your address,contact
+which city are you from,contact
+open your github,github
+share your github link,github
+what repos do you have,github
+can i see your source code,github
+find you on github,github
+open your linkedin,linkedin
+connect with me on linkedin,linkedin
+share your linkedin link,linkedin
+find you on linkedin,linkedin
+thank you very much,thanks
+much appreciated,thanks
+great thanks,thanks
+awesome thank you,thanks
+see ya,goodbye
+catch you later,goodbye
+i am leaving now,goodbye
+that is all for now,goodbye
+end chat,goodbye
+what is your major field of study,profession
+what industry do you work in,profession
+are you an engineering student,profession
+what is your domain,profession
