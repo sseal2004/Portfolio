@@ -1,144 +1,174 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-// ─── Persona — fill in YOUR details ─────────────────────────────────────────
-const SYSTEM_PROMPT = `You are a helpful AI assistant embedded in a personal portfolio website.
-Your job is to answer questions about the portfolio owner warmly and concisely.
+// ─── Backend ──────────────────────────────────────────────────────────────
+// Your trained ML chatbot API (Flask on Render).
+const CHATBOT_API_URL = 'https://portfolio-chatbot-tyh3.onrender.com/chat';
 
-About the owner:
-- Name: [Your Name]
-- Role: Full-Stack Developer / [Your Role]
-- Skills: React, Node.js, Tailwind CSS, [add your stack]
-- Projects: [briefly describe 1-2 key projects]
-- Experience: [X years, companies, etc.]
-- Contact: [your email or preferred contact]
-
-Keep answers short (2-4 sentences). Be friendly and professional.
-If asked something you don't know, say "You can reach out directly via the Contact section!"`;
-
-// ─── Animated Neural-Net Canvas Background ───────────────────────────────────
-const NeuralCanvas = () => {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    let animFrameId;
-
-    const resize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-    };
-    resize();
-    window.addEventListener('resize', resize);
-
-    const NODE_COUNT = 28;
-    const nodes = Array.from({ length: NODE_COUNT }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.35,
-      vy: (Math.random() - 0.5) * 0.35,
-      r: Math.random() * 1.8 + 1,
-      pulse: Math.random() * Math.PI * 2,
-    }));
-
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const bg = ctx.createRadialGradient(
-        canvas.width * 0.5, canvas.height * 0.4, 0,
-        canvas.width * 0.5, canvas.height * 0.5, canvas.width * 1.1
-      );
-      bg.addColorStop(0, '#0d0d1a');
-      bg.addColorStop(0.6, '#070710');
-      bg.addColorStop(1, '#020205');
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      [
-        { x: 0.1, y: 0.15, r: 0.5,  c: 'rgba(180,60,255,0.09)' },
-        { x: 0.9, y: 0.8,  r: 0.45, c: 'rgba(60,120,255,0.07)' },
-        { x: 0.5, y: 1.0,  r: 0.4,  c: 'rgba(251,146,60,0.06)' },
-      ].forEach(({ x, y, r, c }) => {
-        const g = ctx.createRadialGradient(
-          x * canvas.width, y * canvas.height, 0,
-          x * canvas.width, y * canvas.height, r * canvas.width
-        );
-        g.addColorStop(0, c);
-        g.addColorStop(1, 'transparent');
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      });
-
-      nodes.forEach((n) => {
-        n.x += n.vx;
-        n.y += n.vy;
-        n.pulse += 0.018;
-        if (n.x < 0 || n.x > canvas.width)  n.vx *= -1;
-        if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
-      });
-
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const dx = nodes[i].x - nodes[j].x;
-          const dy = nodes[i].y - nodes[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 85) {
-            const alpha = (1 - dist / 85) * 0.22;
-            ctx.beginPath();
-            ctx.moveTo(nodes[i].x, nodes[i].y);
-            ctx.lineTo(nodes[j].x, nodes[j].y);
-            ctx.strokeStyle = `rgba(251,146,60,${alpha})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
-        }
-      }
-
-      nodes.forEach((n) => {
-        const pulse = 0.6 + 0.4 * Math.sin(n.pulse);
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r * pulse, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(251,146,60,${0.5 * pulse})`;
-        ctx.fill();
-        if (n.r > 2) {
-          ctx.beginPath();
-          ctx.arc(n.x, n.y, n.r * pulse + 3, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(251,146,60,${0.1 * pulse})`;
-          ctx.lineWidth = 1.2;
-          ctx.stroke();
-        }
-      });
-
-      animFrameId = requestAnimationFrame(draw);
-    };
-    draw();
-
-    return () => {
-      cancelAnimationFrame(animFrameId);
-      window.removeEventListener('resize', resize);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ display: 'block' }} />;
+// ─── Design tokens ───────────────────────────────────────────────────────
+// "Aurora signal" — a dark instrument panel with a living cyan/violet/magenta
+// aurora that only fully ignites when the bot is actually listening or
+// speaking. The halo brightness is driven by real microphone amplitude
+// while listening, so it's not decoration — it's a readout.
+const T = {
+  void: '#06060f',
+  panel: '#0b0b18',
+  panel2: '#111022',
+  line: 'rgba(155,130,255,0.16)',
+  cyan: '#2ce0c9',
+  violet: '#9b6bff',
+  magenta: '#ff5fa8',
+  text: '#f4f2fb',
+  textDim: 'rgba(244,242,251,0.62)',
+  textFaint: 'rgba(244,242,251,0.38)',
 };
 
-// ─── Main ChatBot Component ──────────────────────────────────────────────────
-export default function ChatBot() {
-  const [isOpen, setIsOpen]       = useState(false);
-  const [messages, setMessages]   = useState([{
-    role: 'assistant',
-    content: "Hey there! 👋 I'm here to answer any questions about this portfolio. Ask me anything!",
-  }]);
-  const [input, setInput]         = useState('');
-  const [loading, setLoading]     = useState(false);
+const FONT_IMPORT_ID = 'portfolio-chatbot-fonts';
+
+function ensureFontsLoaded() {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById(FONT_IMPORT_ID)) return;
+  const link = document.createElement('link');
+  link.id = FONT_IMPORT_ID;
+  link.rel = 'stylesheet';
+  link.href =
+    'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap';
+  document.head.appendChild(link);
+}
+
+// ─── Voice halo — audio-reactive SVG ring ───────────────────────────────
+// state: 'idle' | 'listening' | 'speaking' | 'thinking'
+const VoiceHalo = ({ state, amplitude = 0, size = 40 }) => {
+  const base = size;
+  const boost =
+    state === 'listening' ? amplitude * 0.9 : state === 'speaking' ? 0.35 : 0;
+  const ringColor =
+    state === 'listening'
+      ? T.cyan
+      : state === 'speaking'
+      ? T.magenta
+      : state === 'thinking'
+      ? T.violet
+      : T.violet;
+
+  return (
+    <div
+      className={state === 'thinking' ? 'pcb-halo-spin' : ''}
+      style={{ position: 'relative', width: base, height: base, flexShrink: 0 }}
+    >
+      <div
+        className={state === 'idle' ? 'pcb-halo-breathe' : ''}
+        style={{
+          position: 'absolute',
+          inset: -6,
+          borderRadius: '50%',
+          background: `radial-gradient(circle, ${ringColor}33 0%, transparent 70%)`,
+          transform: `scale(${1 + boost})`,
+          transition: state === 'listening' ? 'transform 60ms linear' : 'transform 200ms ease',
+        }}
+      />
+      <svg
+        width={base}
+        height={base}
+        viewBox="0 0 40 40"
+        style={{ position: 'relative', display: 'block' }}
+      >
+        <defs>
+          <linearGradient id="pcb-ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={T.cyan} />
+            <stop offset="50%" stopColor={T.violet} />
+            <stop offset="100%" stopColor={T.magenta} />
+          </linearGradient>
+        </defs>
+        <circle cx="20" cy="20" r="17.5" fill={T.panel2} stroke="url(#pcb-ring-grad)" strokeWidth={1.4} />
+        <circle
+          cx="20"
+          cy="20"
+          r={17.5 + boost * 4}
+          fill="none"
+          stroke={ringColor}
+          strokeWidth={1}
+          opacity={state === 'idle' ? 0.25 : 0.6 + boost * 0.3}
+          style={{ transition: 'r 60ms linear, opacity 120ms ease' }}
+        />
+        <text x="20" y="26" textAnchor="middle" fontSize="17">
+          🤖
+        </text>
+      </svg>
+    </div>
+  );
+};
+
+// ─── Waveform bars (used inline for the "speaking" typing-style indicator) ──
+const WaveformBars = ({ active }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 3, height: 14 }}>
+    {[0, 1, 2, 3, 4].map((i) => (
+      <span
+        key={i}
+        className={active ? 'pcb-bar-active' : ''}
+        style={{
+          display: 'inline-block',
+          width: 2.5,
+          height: active ? undefined : 4,
+          borderRadius: 2,
+          background: `linear-gradient(180deg, ${T.cyan}, ${T.magenta})`,
+          animationDelay: `${i * 90}ms`,
+        }}
+      />
+    ))}
+  </div>
+);
+
+export default function PortfolioChatBot() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    {
+      role: 'assistant',
+      content:
+        "Hey! I'm Soumyadipta's portfolio assistant. Ask me about his skills, projects, experience, or how to reach him — or just tap the mic and talk to me. 🎙️",
+    },
+  ]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingLabel, setLoadingLabel] = useState('Thinking…');
   const [hasNewMsg, setHasNewMsg] = useState(false);
-  const [hovered, setHovered]     = useState(false);
-  const messagesEndRef            = useRef(null);
-  const inputRef                  = useRef(null);
+  const [hovered, setHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth <= 640 : false
+  );
+
+  // Voice output (TTS)
+  const [voiceOn, setVoiceOn] = useState(true);
+  const [speaking, setSpeaking] = useState(false);
+  const femaleVoiceRef = useRef(null);
+
+  // Voice input (STT)
+  const [listening, setListening] = useState(false);
+  const [voiceInputSupported, setVoiceInputSupported] = useState(true);
+  const [amplitude, setAmplitude] = useState(0);
+  const recognitionRef = useRef(null);
+  const finalizedRef = useRef(false);
+  const audioCtxRef = useRef(null);
+  const analyserRef = useRef(null);
+  const micStreamRef = useRef(null);
+  const rafRef = useRef(null);
+
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    ensureFontsLoaded();
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 640);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useEffect(() => {
     if (isOpen) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isOpen]);
+  }, [messages, isOpen, loading]);
 
   useEffect(() => {
     if (isOpen) {
@@ -147,274 +177,598 @@ export default function ChatBot() {
     }
   }, [isOpen]);
 
-  const sendMessage = async () => {
-    const trimmed = input.trim();
-    if (!trimmed || loading) return;
+  // ── Pick a female-sounding voice for speechSynthesis ──
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    const pickVoice = () => {
+      const voices = window.speechSynthesis.getVoices() || [];
+      if (!voices.length) return;
+      const knownFemale = [
+        'Google UK English Female',
+        'Google US English',
+        'Microsoft Zira',
+        'Microsoft Jenny',
+        'Samantha',
+        'Victoria',
+        'Moira',
+        'Karen',
+        'Tessa',
+        'Fiona',
+      ];
+      const byNameMatch = voices.find((v) => /female/i.test(v.name));
+      const byKnownList = voices.find((v) => knownFemale.includes(v.name));
+      const byEnglish = voices.find((v) => v.lang?.startsWith('en'));
+      femaleVoiceRef.current = byNameMatch || byKnownList || byEnglish || voices[0];
+    };
+    pickVoice();
+    window.speechSynthesis.addEventListener('voiceschanged', pickVoice);
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', pickVoice);
+  }, []);
 
-    const userMsg         = { role: 'user', content: trimmed };
-    const updatedMessages = [...messages, userMsg];
-    setMessages(updatedMessages);
-    setInput('');
-    setLoading(true);
+  // ── Set up SpeechRecognition (voice input) ──
+  useEffect(() => {
+    const SR =
+      typeof window !== 'undefined' &&
+      (window.SpeechRecognition || window.webkitSpeechRecognition);
+    if (!SR) {
+      setVoiceInputSupported(false);
+      return;
+    }
+    const recog = new SR();
+    recog.continuous = false;
+    recog.interimResults = true;
+    recog.lang = 'en-US';
 
+    recog.onresult = (e) => {
+      let transcript = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        transcript += e.results[i][0].transcript;
+      }
+      setInput(transcript);
+      const last = e.results[e.results.length - 1];
+      if (last.isFinal && !finalizedRef.current) {
+        finalizedRef.current = true;
+        recog.stop();
+        // slight delay so the user sees their final transcript land before it sends
+        setTimeout(() => doSend(transcript), 250);
+      }
+    };
+    recog.onend = () => {
+      setListening(false);
+      stopAmplitudeMeter();
+    };
+    recog.onerror = () => {
+      setListening(false);
+      stopAmplitudeMeter();
+    };
+    recognitionRef.current = recog;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const startAmplitudeMeter = async () => {
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          system: SYSTEM_PROMPT,
-          messages: updatedMessages.map(({ role, content }) => ({ role, content })),
-        }),
-      });
-      const data          = await response.json();
-      const assistantText = data?.content?.[0]?.text ?? "Sorry, couldn't fetch a response. Try again!";
-      setMessages((prev) => [...prev, { role: 'assistant', content: assistantText }]);
-      if (!isOpen) setHasNewMsg(true);
-    } catch (err) {
-      console.error('ChatBot error:', err);
-      setMessages((prev) => [...prev, { role: 'assistant', content: '⚠️ Something went wrong. Please try again.' }]);
-    } finally {
-      setLoading(false);
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      micStreamRef.current = stream;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const audioCtx = new AudioCtx();
+      audioCtxRef.current = audioCtx;
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      const tick = () => {
+        analyser.getByteFrequencyData(data);
+        const avg = data.reduce((a, b) => a + b, 0) / data.length;
+        setAmplitude(Math.min(1, avg / 130));
+        rafRef.current = requestAnimationFrame(tick);
+      };
+      tick();
+    } catch (e) {
+      // mic permission denied for the visualizer — recognition can still work independently
     }
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  const stopAmplitudeMeter = () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    micStreamRef.current?.getTracks().forEach((t) => t.stop());
+    if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+      audioCtxRef.current.close().catch(() => {});
+    }
+    setAmplitude(0);
   };
+
+  const toggleListening = () => {
+    if (!voiceInputSupported || !recognitionRef.current) return;
+    if (listening) {
+      recognitionRef.current.stop();
+      setListening(false);
+      stopAmplitudeMeter();
+    } else {
+      window.speechSynthesis?.cancel();
+      setSpeaking(false);
+      finalizedRef.current = false;
+      setInput('');
+      try {
+        recognitionRef.current.start();
+        setListening(true);
+        startAmplitudeMeter();
+      } catch (e) {
+        // recognition may already be running; ignore
+      }
+    }
+  };
+
+  const speak = useCallback(
+    (text) => {
+      if (!voiceOn || typeof window === 'undefined' || !window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      if (femaleVoiceRef.current) utter.voice = femaleVoiceRef.current;
+      utter.pitch = 1.12;
+      utter.rate = 1.02;
+      utter.onstart = () => setSpeaking(true);
+      utter.onend = () => setSpeaking(false);
+      utter.onerror = () => setSpeaking(false);
+      window.speechSynthesis.speak(utter);
+    },
+    [voiceOn]
+  );
+
+  const doSend = async (rawText) => {
+    const trimmed = (rawText ?? '').trim();
+    if (!trimmed || loading) return;
+
+    const userMsg = { role: 'user', content: trimmed };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput('');
+    setLoading(true);
+    setLoadingLabel('Thinking…');
+
+    const wakeTimer = setTimeout(() => {
+      setLoadingLabel('Waking the server up — first request can take up to a minute…');
+    }, 6000);
+
+    try {
+      const res = await fetch(CHATBOT_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: trimmed }),
+      });
+      if (!res.ok) throw new Error(`Server responded ${res.status}`);
+      const data = await res.json();
+      const reply = data?.reply || "Sorry, I couldn't process that — please try again.";
+      setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
+      if (!isOpen) setHasNewMsg(true);
+      speak(reply);
+    } catch (err) {
+      const fallback =
+        "⚠️ I couldn't reach the server just now. It may be waking up from sleep — please try again in a few seconds.";
+      setMessages((prev) => [...prev, { role: 'assistant', content: fallback }]);
+    } finally {
+      clearTimeout(wakeTimer);
+      setLoading(false);
+      setLoadingLabel('Thinking…');
+    }
+  };
+
+  const sendMessage = () => doSend(input);
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const botState = listening ? 'listening' : speaking ? 'speaking' : loading ? 'thinking' : 'idle';
+
+  // ── Responsive geometry ──
+  const winStyle = isMobile
+    ? {
+        bottom: 0,
+        right: 0,
+        left: 0,
+        top: 0,
+        width: '100vw',
+        height: '100dvh',
+        borderRadius: 0,
+        border: 'none',
+      }
+    : {
+        bottom: 96,
+        right: 24,
+        width: 372,
+        height: 560,
+        borderRadius: 22,
+        border: `1px solid ${T.line}`,
+      };
+
+  const fabPos = isMobile ? { bottom: 18, right: 18 } : { bottom: 24, right: 24 };
+  const fabSize = isMobile ? 58 : 64;
 
   return (
     <>
-      {/* ── Global Keyframes ── */}
       <style>{`
-        @property --angle {
+        @property --pcb-angle {
           syntax: '<angle>';
           initial-value: 0deg;
           inherits: false;
         }
-        @keyframes spin-angle { to { --angle: 360deg; } }
-        @keyframes float-up {
+        @keyframes pcb-spin { to { --pcb-angle: 360deg; } }
+        @keyframes pcb-float {
           0%, 100% { transform: translateY(0px); }
-          50%       { transform: translateY(-5px); }
+          50%      { transform: translateY(-5px); }
         }
-        @keyframes orb-ping {
-          0%   { transform: scale(1);   opacity: 0.5; }
-          100% { transform: scale(1.9); opacity: 0;   }
+        @keyframes pcb-ping {
+          0%   { transform: scale(1);   opacity: 0.45; }
+          100% { transform: scale(1.9); opacity: 0;    }
         }
-        .chatbot-spin-ring {
-          background: conic-gradient(from var(--angle), #fb923c, #a855f7, #3b82f6, #fb923c);
-          animation: spin-angle 3s linear infinite;
+        @keyframes pcb-breathe {
+          0%, 100% { opacity: 0.55; transform: scale(1); }
+          50%      { opacity: 0.9;  transform: scale(1.05); }
         }
-        .chatbot-spin-ring-slow {
-          background: conic-gradient(from var(--angle), #7c3aed, #fb923c, #1d4ed8, #7c3aed);
-          animation: spin-angle 5s linear infinite;
+        @keyframes pcb-bar {
+          0%, 100% { height: 4px; }
+          50%      { height: 14px; }
         }
-        .chatbot-float { animation: float-up 3.5s ease-in-out infinite; }
-        .chatbot-float:hover { animation: none; }
-        .chatbot-orb-ping { animation: orb-ping 2s ease-out infinite; }
-        .chatbot-messages::-webkit-scrollbar { width: 4px; }
-        .chatbot-messages::-webkit-scrollbar-track { background: transparent; }
-        .chatbot-messages::-webkit-scrollbar-thumb { background: rgba(251,146,60,0.25); border-radius: 4px; }
-        .chatbot-input::-webkit-scrollbar { display: none; }
+        @keyframes pcb-slide-up {
+          from { transform: translateY(14px); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+        .pcb-spin-ring {
+          background: conic-gradient(from var(--pcb-angle), ${T.cyan}, ${T.violet}, ${T.magenta}, ${T.cyan});
+          animation: pcb-spin 3.2s linear infinite;
+        }
+        .pcb-halo-spin { animation: pcb-spin 1.1s linear infinite; }
+        .pcb-halo-breathe { animation: pcb-breathe 3.4s ease-in-out infinite; }
+        .pcb-float { animation: pcb-float 3.6s ease-in-out infinite; }
+        .pcb-float:hover { animation: none; }
+        .pcb-orb-ping { animation: pcb-ping 2s ease-out infinite; }
+        .pcb-bar-active { animation: pcb-bar 0.9s ease-in-out infinite; }
+        .pcb-msg-in { animation: pcb-slide-up 0.28s ease-out; }
+        .pcb-messages::-webkit-scrollbar { width: 4px; }
+        .pcb-messages::-webkit-scrollbar-track { background: transparent; }
+        .pcb-messages::-webkit-scrollbar-thumb { background: rgba(155,107,255,0.28); border-radius: 4px; }
+        .pcb-input::-webkit-scrollbar { display: none; }
+        @media (prefers-reduced-motion: reduce) {
+          .pcb-spin-ring, .pcb-halo-spin, .pcb-halo-breathe, .pcb-float, .pcb-orb-ping, .pcb-bar-active, .pcb-msg-in {
+            animation: none !important;
+          }
+        }
       `}</style>
 
-      {/* ── Floating Button ── */}
-      <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3">
-
-        {/* Tooltip */}
+      {/* ── Floating launcher ── */}
+      <div
+        style={{
+          position: 'fixed',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: 12,
+          ...fabPos,
+        }}
+      >
         <div
-          className="transition-all duration-300 ease-out"
           style={{
-            opacity: hovered && !isOpen ? 1 : 0,
-            transform: hovered && !isOpen ? 'translateX(0)' : 'translateX(12px)',
-            pointerEvents: hovered && !isOpen ? 'auto' : 'none',
+            transition: 'all 300ms ease-out',
+            opacity: hovered && !isOpen && !isMobile ? 1 : 0,
+            transform: hovered && !isOpen && !isMobile ? 'translateX(0)' : 'translateX(12px)',
+            pointerEvents: 'none',
           }}
         >
           <span
-            className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider px-3 py-1.5 rounded-full whitespace-nowrap"
             style={{
-              background: 'linear-gradient(135deg, #0d0d1a, #1a0a2e)',
-              border: '1px solid rgba(251,146,60,0.3)',
-              color: '#fb923c',
-              boxShadow: '0 0 16px rgba(251,146,60,0.15)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 11,
+              letterSpacing: '0.06em',
+              padding: '7px 12px',
+              borderRadius: 999,
+              whiteSpace: 'nowrap',
+              background: `linear-gradient(135deg, ${T.void}, ${T.panel2})`,
+              border: `1px solid ${T.line}`,
+              color: T.cyan,
+              boxShadow: `0 0 18px ${T.cyan}22`,
             }}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
-            Ask me anything
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: T.cyan,
+                boxShadow: `0 0 6px ${T.cyan}`,
+              }}
+            />
+            Talk to my AI twin
           </span>
         </div>
 
-        {/* Button wrapper */}
-        <div className="chatbot-float relative" style={{ width: 64, height: 64 }}>
-
-          {/* Ambient orb ping */}
+        <div className="pcb-float" style={{ position: 'relative', width: fabSize, height: fabSize }}>
           {!isOpen && (
             <span
-              className="chatbot-orb-ping absolute inset-0 rounded-full"
-              style={{ background: 'radial-gradient(circle, rgba(251,146,60,0.35) 0%, transparent 70%)' }}
+              className="pcb-orb-ping"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: '50%',
+                background: `radial-gradient(circle, ${T.violet}55 0%, transparent 70%)`,
+              }}
             />
           )}
-
-          {/* Spinning border */}
-          <span className="chatbot-spin-ring absolute rounded-full" style={{ inset: -3 }} />
-
-          {/* Button face */}
+          <span className="pcb-spin-ring" style={{ position: 'absolute', inset: -3, borderRadius: '50%' }} />
           <button
             onClick={() => setIsOpen((p) => !p)}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
-            aria-label="Toggle Chatbot"
-            className="absolute rounded-full flex items-center justify-center overflow-hidden transition-transform duration-200 active:scale-90"
+            aria-label="Toggle portfolio chatbot"
             style={{
+              position: 'absolute',
               inset: 2,
-              background: 'radial-gradient(circle at 40% 35%, #1a0d2e, #07070f)',
-              boxShadow: 'inset 0 0 12px rgba(251,146,60,0.08)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              border: 'none',
+              cursor: 'pointer',
+              background: `radial-gradient(circle at 38% 32%, ${T.panel2}, ${T.void})`,
+              boxShadow: `inset 0 0 14px ${T.violet}22`,
+              transition: 'transform 160ms ease',
             }}
+            onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.9)')}
+            onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
           >
-            {/* Notification dot */}
             {hasNewMsg && !isOpen && (
               <span
-                className="absolute top-0.5 right-0.5 w-3 h-3 rounded-full bg-orange-500 border-2"
-                style={{ borderColor: '#07070f' }}
+                style={{
+                  position: 'absolute',
+                  top: 3,
+                  right: 3,
+                  width: 12,
+                  height: 12,
+                  borderRadius: '50%',
+                  background: T.magenta,
+                  border: `2px solid ${T.void}`,
+                  boxShadow: `0 0 8px ${T.magenta}`,
+                }}
               />
             )}
-
             {isOpen ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <svg width={20} height={20} viewBox="0 0 24 24" fill="none">
                 <defs>
-                  <linearGradient id="cb-close" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="#fb923c" />
-                    <stop offset="100%" stopColor="#a855f7" />
+                  <linearGradient id="pcb-close" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor={T.cyan} />
+                    <stop offset="100%" stopColor={T.magenta} />
                   </linearGradient>
                 </defs>
-                <path d="M6 18L18 6M6 6l12 12" stroke="url(#cb-close)" strokeWidth="2.5" strokeLinecap="round" />
+                <path d="M6 18L18 6M6 6l12 12" stroke="url(#pcb-close)" strokeWidth={2.5} strokeLinecap="round" />
               </svg>
             ) : (
-              <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                <defs>
-                  <linearGradient id="cb-icon" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%"   stopColor="#fb923c" />
-                    <stop offset="50%"  stopColor="#a855f7" />
-                    <stop offset="100%" stopColor="#3b82f6" />
-                  </linearGradient>
-                  <linearGradient id="cb-icon2" x1="0%" y1="100%" x2="100%" y2="0%">
-                    <stop offset="0%"   stopColor="#fb923c" />
-                    <stop offset="100%" stopColor="#a855f7" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M14 4C9.03 4 5 7.69 5 12.2c0 2.56 1.34 4.85 3.44 6.34L7.5 22.5l3.94-1.69A9.8 9.8 0 0014 21.4c4.97 0 9-3.69 9-8.2S18.97 4 14 4z"
-                  fill="url(#cb-icon)" opacity="0.14"
-                />
-                <path
-                  d="M14 4C9.03 4 5 7.69 5 12.2c0 2.56 1.34 4.85 3.44 6.34L7.5 22.5l3.94-1.69A9.8 9.8 0 0014 21.4c4.97 0 9-3.69 9-8.2S18.97 4 14 4z"
-                  stroke="url(#cb-icon)" strokeWidth="1.4" fill="none"
-                />
-                <circle cx="10" cy="12.5" r="1.2" fill="url(#cb-icon)" />
-                <circle cx="14" cy="12.5" r="1.2" fill="url(#cb-icon)" />
-                <circle cx="18" cy="12.5" r="1.2" fill="url(#cb-icon)" />
-                <line x1="10" y1="11.3" x2="9"  y2="8.5" stroke="url(#cb-icon2)" strokeWidth="0.8" strokeLinecap="round" opacity="0.6" />
-                <line x1="14" y1="11.3" x2="14" y2="8"   stroke="url(#cb-icon2)" strokeWidth="0.8" strokeLinecap="round" opacity="0.6" />
-                <line x1="18" y1="11.3" x2="19" y2="8.5" stroke="url(#cb-icon2)" strokeWidth="0.8" strokeLinecap="round" opacity="0.6" />
-                <circle cx="9"  cy="8.5" r="0.9" fill="#fb923c" opacity="0.7" />
-                <circle cx="14" cy="8"   r="0.9" fill="#a855f7" opacity="0.7" />
-                <circle cx="19" cy="8.5" r="0.9" fill="#3b82f6" opacity="0.7" />
-                <line x1="23" y1="4.5" x2="23" y2="7"     stroke="#fb923c" strokeWidth="1.2" strokeLinecap="round" />
-                <line x1="21.75" y1="5.75" x2="24.25" y2="5.75" stroke="#fb923c" strokeWidth="1.2" strokeLinecap="round" />
-                <line x1="4.5" y1="20" x2="4.5" y2="22"   stroke="#3b82f6" strokeWidth="1" strokeLinecap="round" />
-                <line x1="3.5" y1="21" x2="5.5" y2="21"   stroke="#3b82f6" strokeWidth="1" strokeLinecap="round" />
-              </svg>
+              <span style={{ fontSize: isMobile ? 24 : 26 }}>🤖</span>
             )}
           </button>
         </div>
       </div>
 
-      {/* ── Chat Window ── */}
-      {/*
-        FIX: Use fixed `height` (not maxHeight) so the window never grows.
-        The flex column inside distributes space: header (fixed) + messages (flex-1, scrollable) + input (fixed).
-      */}
+      {/* ── Chat window ── */}
       <div
-        className="fixed z-[9998] flex flex-col overflow-hidden transition-all duration-300 ease-in-out"
         style={{
-          bottom: 88,
-          right: 24,
-          width: 360,
-          height: 540,           /* ← FIXED height, not maxHeight */
-          borderRadius: 20,
+          position: 'fixed',
+          zIndex: 9998,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          transition: 'all 280ms ease-in-out',
           transformOrigin: 'bottom right',
-          transform: isOpen ? 'scale(1)'  : 'scale(0.88)',
-          opacity:   isOpen ? 1           : 0,
-          pointerEvents: isOpen ? 'auto'  : 'none',
-          border: '1px solid rgba(251,146,60,0.18)',
-          boxShadow: '0 0 0 1px rgba(168,85,247,0.1), 0 24px 60px rgba(0,0,0,0.7), 0 0 40px rgba(251,146,60,0.08)',
+          transform: isOpen ? 'scale(1)' : 'scale(0.9)',
+          opacity: isOpen ? 1 : 0,
+          pointerEvents: isOpen ? 'auto' : 'none',
+          boxShadow: `0 0 0 1px ${T.violet}18, 0 26px 64px rgba(0,0,0,0.75), 0 0 46px ${T.violet}14`,
+          background: T.void,
+          fontFamily: "'Inter', sans-serif",
+          ...winStyle,
         }}
       >
-        {/* ── Header ── */}
-        <div className="relative flex-shrink-0 overflow-hidden" style={{ height: 68 }}>
-          <NeuralCanvas />
+        {/* Header */}
+        <div
+          style={{
+            position: 'relative',
+            flexShrink: 0,
+            height: isMobile ? 76 : 70,
+            background: `linear-gradient(135deg, ${T.panel} 0%, ${T.void} 100%)`,
+            borderBottom: `1px solid ${T.line}`,
+            paddingTop: isMobile ? 'env(safe-area-inset-top, 0px)' : 0,
+          }}
+        >
+          {isMobile && (
+            <div
+              style={{
+                width: 36,
+                height: 4,
+                borderRadius: 2,
+                background: T.line,
+                margin: '8px auto 0',
+              }}
+            />
+          )}
           <div
-            className="absolute inset-0 flex items-center gap-3 px-4"
-            style={{ background: 'linear-gradient(90deg, rgba(13,13,26,0.6) 0%, transparent 100%)' }}
+            style={{
+              height: isMobile ? 60 : 70,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '0 16px',
+            }}
           >
-            <div className="relative flex-shrink-0" style={{ width: 38, height: 38 }}>
-              <div className="chatbot-spin-ring-slow absolute rounded-full" style={{ inset: -2 }} />
-              <div
-                className="absolute flex items-center justify-center rounded-full text-base"
-                style={{ inset: 1.5, background: '#0d0d1a' }}
-              >🤖</div>
-            </div>
-            <div>
-              <p className="font-semibold text-sm" style={{ color: '#fb923c', letterSpacing: '0.03em' }}>
-                Portfolio AI
+            <VoiceHalo state={botState} amplitude={amplitude} size={38} />
+            <div style={{ minWidth: 0 }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontWeight: 600,
+                  fontSize: 15,
+                  letterSpacing: '0.01em',
+                  background: `linear-gradient(90deg, ${T.cyan}, ${T.violet})`,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                Soumyadipta — AI Twin
               </p>
-              <p className="text-xs flex items-center gap-1.5 mt-0.5" style={{ color: 'rgba(251,146,60,0.6)' }}>
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
-                Neural net online
+              <p
+                style={{
+                  margin: '2px 0 0',
+                  fontSize: 11,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  letterSpacing: '0.04em',
+                  color:
+                    botState === 'listening'
+                      ? T.cyan
+                      : botState === 'speaking'
+                      ? T.magenta
+                      : T.textFaint,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <span
+                  style={{
+                    width: 5,
+                    height: 5,
+                    borderRadius: '50%',
+                    background: 'currentColor',
+                  }}
+                />
+                {botState === 'listening'
+                  ? 'listening…'
+                  : botState === 'speaking'
+                  ? 'speaking…'
+                  : botState === 'thinking'
+                  ? 'thinking…'
+                  : 'signal online'}
               </p>
             </div>
-            <div className="ml-auto flex gap-1.5 opacity-50">
-              {['#fb923c', '#a855f7', '#3b82f6'].map((c, i) => (
-                <span key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: c }} />
-              ))}
+
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button
+                onClick={() => {
+                  setVoiceOn((v) => {
+                    const next = !v;
+                    if (!next) window.speechSynthesis?.cancel();
+                    return next;
+                  });
+                }}
+                aria-label={voiceOn ? 'Mute voice reply' : 'Unmute voice reply'}
+                title={voiceOn ? 'Voice reply on' : 'Voice reply off'}
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 9,
+                  border: `1px solid ${T.line}`,
+                  background: T.panel2,
+                  color: voiceOn ? T.cyan : T.textFaint,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 13,
+                }}
+              >
+                {voiceOn ? '🔊' : '🔇'}
+              </button>
+              {isMobile && (
+                <button
+                  onClick={() => setIsOpen(false)}
+                  aria-label="Close chat"
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: 9,
+                    border: `1px solid ${T.line}`,
+                    background: T.panel2,
+                    color: T.textDim,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* ── Messages — flex-1 + minHeight:0 lets it shrink and scroll internally ── */}
+        {/* Messages */}
         <div
-          className="chatbot-messages overflow-y-auto px-3 py-3 space-y-3"
+          className="pcb-messages"
           style={{
-            flex: '1 1 0',       /* ← grow to fill, but allow shrinking */
-            minHeight: 0,        /* ← critical: prevents flex child from overflowing */
-            background: '#07070f',
+            flex: '1 1 0',
+            minHeight: 0,
+            overflowY: 'auto',
+            padding: '14px 12px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+            background: `radial-gradient(120% 60% at 15% 0%, ${T.violet}0d 0%, transparent 60%), ${T.void}`,
           }}
         >
           {messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div
+              key={i}
+              className="pcb-msg-in"
+              style={{
+                display: 'flex',
+                justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+              }}
+            >
               {msg.role === 'assistant' && (
                 <div
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs mr-2 mt-0.5 flex-shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #fb923c, #a855f7)' }}
-                >🤖</div>
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12,
+                    marginRight: 8,
+                    marginTop: 2,
+                    flexShrink: 0,
+                    background: `linear-gradient(135deg, ${T.cyan}, ${T.violet})`,
+                  }}
+                >
+                  🤖
+                </div>
               )}
               <div
-                className="max-w-[78%] px-3 py-2 text-sm leading-relaxed"
                 style={{
+                  maxWidth: '78%',
+                  padding: '10px 13px',
+                  fontSize: 14,
+                  lineHeight: 1.5,
+                  whiteSpace: 'pre-wrap',
                   borderRadius: msg.role === 'user' ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
                   ...(msg.role === 'user'
                     ? {
-                        background: 'linear-gradient(135deg, rgba(251,146,60,0.2), rgba(168,85,247,0.2))',
-                        border: '1px solid rgba(251,146,60,0.25)',
-                        color: '#fcd9b0',
+                        background: `linear-gradient(135deg, ${T.cyan}26, ${T.violet}26)`,
+                        border: `1px solid ${T.cyan}40`,
+                        color: '#e6fbf6',
                       }
                     : {
-                        background: 'rgba(255,255,255,0.04)',
-                        border: '1px solid rgba(255,255,255,0.07)',
-                        color: 'rgba(255,255,255,0.82)',
-                      }
-                  ),
+                        background: T.panel2,
+                        border: `1px solid ${T.line}`,
+                        color: T.text,
+                      }),
                 }}
               >
                 {msg.content}
@@ -422,28 +776,44 @@ export default function ChatBot() {
             </div>
           ))}
 
-          {/* Typing indicator */}
           {loading && (
-            <div className="flex justify-start items-center gap-2">
+            <div className="pcb-msg-in" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div
-                className="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg, #fb923c, #a855f7)' }}
-              >🤖</div>
-              <div
-                className="px-4 py-3 flex gap-1.5"
                 style={{
-                  borderRadius: '4px 16px 16px 16px',
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.07)',
+                  width: 26,
+                  height: 26,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 12,
+                  flexShrink: 0,
+                  background: `linear-gradient(135deg, ${T.cyan}, ${T.violet})`,
                 }}
               >
-                {['#fb923c', '#a855f7', '#3b82f6'].map((c, i) => (
-                  <span
-                    key={i}
-                    className="w-1.5 h-1.5 rounded-full animate-bounce"
-                    style={{ background: c, animationDelay: `${i * 150}ms` }}
-                  />
-                ))}
+                🤖
+              </div>
+              <div
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '4px 16px 16px 16px',
+                  background: T.panel2,
+                  border: `1px solid ${T.line}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                }}
+              >
+                <WaveformBars active />
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    color: T.textFaint,
+                  }}
+                >
+                  {loadingLabel}
+                </span>
               </div>
             </div>
           )}
@@ -451,72 +821,109 @@ export default function ChatBot() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* ── Input — flex-shrink-0 keeps it anchored at the bottom ── */}
+        {/* Input bar */}
         <div
-          className="flex-shrink-0 px-3 py-3 flex gap-2 items-center"
           style={{
-            background: '#0a0a16',
-            borderTop: '1px solid rgba(251,146,60,0.12)',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '11px 12px',
+            paddingBottom: isMobile ? 'calc(11px + env(safe-area-inset-bottom, 0px))' : 11,
+            background: T.panel,
+            borderTop: `1px solid ${T.line}`,
           }}
         >
-          {/*
-            FIX: textarea has a fixed height so it never pushes the window taller.
-            overflow-y: auto lets the user scroll their typed text if it's long.
-            resize: none disables manual dragging.
-          */}
+          {voiceInputSupported && (
+            <button
+              onClick={toggleListening}
+              aria-label={listening ? 'Stop voice input' : 'Start voice input'}
+              title={listening ? 'Stop listening' : 'Speak your question'}
+              style={{
+                flexShrink: 0,
+                width: 38,
+                height: 38,
+                borderRadius: 11,
+                border: `1px solid ${listening ? T.cyan : T.line}`,
+                background: listening ? `${T.cyan}1f` : T.panel2,
+                color: listening ? T.cyan : T.textDim,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 16,
+                boxShadow: listening ? `0 0 ${8 + amplitude * 18}px ${T.cyan}66` : 'none',
+                transition: 'box-shadow 80ms linear, background 150ms ease',
+              }}
+            >
+              {listening ? '⏺️' : '🎙️'}
+            </button>
+          )}
+
           <textarea
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask me anything..."
-            className="chatbot-input flex-1 text-sm outline-none"
+            placeholder={listening ? 'Listening… speak now' : 'Ask me anything, or tap the mic…'}
             style={{
-              height: 40,              /* ← fixed height, never grows */
-              resize: 'none',          /* ← no manual resize handle */
-              overflow: 'hidden',      /* ← hides scrollbar; text just wraps */
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(251,146,60,0.15)',
+              flex: 1,
+              height: 40,
+              resize: 'none',
+              overflow: 'hidden',
+              background: T.panel2,
+              border: `1px solid ${T.line}`,
               borderRadius: 12,
-              padding: '8px 12px',
-              color: 'rgba(255,255,255,0.85)',
+              padding: '9px 12px',
+              color: T.text,
+              fontSize: 14,
+              lineHeight: 1.4,
+              outline: 'none',
+              fontFamily: "'Inter', sans-serif",
               scrollbarWidth: 'none',
-              lineHeight: '1.4',
             }}
-            onFocus={(e) => (e.target.style.borderColor = 'rgba(251,146,60,0.45)')}
-            onBlur={(e)  => (e.target.style.borderColor = 'rgba(251,146,60,0.15)')}
+            className="pcb-input"
+            onFocus={(e) => (e.target.style.borderColor = `${T.violet}88`)}
+            onBlur={(e) => (e.target.style.borderColor = T.line)}
           />
+
           <button
             onClick={sendMessage}
             disabled={!input.trim() || loading}
-            aria-label="Send"
-            className="flex-shrink-0 flex items-center justify-center transition-all duration-150 active:scale-90"
+            aria-label="Send message"
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: input.trim() && !loading
-                ? 'linear-gradient(135deg, #fb923c, #a855f7)'
-                : 'rgba(255,255,255,0.07)',
-              opacity: input.trim() && !loading ? 1 : 0.4,
+              flexShrink: 0,
+              width: 38,
+              height: 38,
+              borderRadius: 11,
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               cursor: input.trim() && !loading ? 'pointer' : 'not-allowed',
-              transition: 'all 0.2s',
+              opacity: input.trim() && !loading ? 1 : 0.4,
+              background:
+                input.trim() && !loading
+                  ? `linear-gradient(135deg, ${T.cyan}, ${T.violet})`
+                  : T.panel2,
+              transition: 'opacity 150ms ease',
             }}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24"
-              stroke="white" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5}>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+              />
             </svg>
           </button>
         </div>
 
-        {/* Bottom glow line */}
         <div
-          className="flex-shrink-0"
           style={{
-            height: 1,
-            background: 'linear-gradient(90deg, transparent, rgba(251,146,60,0.3), rgba(168,85,247,0.3), transparent)',
+            flexShrink: 0,
+            height: 2,
+            background: `linear-gradient(90deg, transparent, ${T.cyan}55, ${T.violet}55, ${T.magenta}55, transparent)`,
           }}
         />
       </div>
