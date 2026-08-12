@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
 // ─── Backend ──────────────────────────────────────────────────────────────
 // Your trained ML chatbot API (Flask on Render).
@@ -154,6 +155,18 @@ export default function PortfolioChatBot() {
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Renders straight into document.body via a portal (see return statement
+  // below) so this widget is never affected by an ancestor's transform /
+  // filter / backdrop-filter — those silently change what "position: fixed"
+  // is measured against, which is what was causing the mobile card to
+  // stretch to fill the wrong box instead of the real viewport. `mounted`
+  // guards against SSR frameworks (Next.js etc.) where `document` doesn't
+  // exist during server rendering.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     ensureFontsLoaded();
@@ -365,16 +378,19 @@ export default function PortfolioChatBot() {
   const botState = listening ? 'listening' : speaking ? 'speaking' : loading ? 'thinking' : 'idle';
 
   // ── Responsive geometry ──
+  // Mobile is NOT edge-to-edge full screen — it's a floating card with
+  // real margins (matching the reference layout: visible page behind it,
+  // rounded corners preserved, launcher FAB floating just past its
+  // bottom-right corner). Sizes come from viewport math, not a fixed
+  // desktop card stretched to fit.
   const winStyle = isMobile
     ? {
-        bottom: 0,
-        right: 0,
-        left: 0,
-        top: 0,
-        width: '100vw',
-        height: '100dvh',
-        borderRadius: 0,
-        border: 'none',
+        top: 'max(16px, env(safe-area-inset-top, 0px))',
+        left: 16,
+        width: 'calc(100vw - 32px)',
+        height: 'calc(100dvh - 16px - max(16px, env(safe-area-inset-top, 0px)) - 92px)',
+        borderRadius: 28,
+        border: `1px solid ${T.line}`,
       }
     : {
         bottom: 96,
@@ -385,10 +401,12 @@ export default function PortfolioChatBot() {
         border: `1px solid ${T.line}`,
       };
 
-  const fabPos = isMobile ? { bottom: 18, right: 18 } : { bottom: 24, right: 24 };
-  const fabSize = isMobile ? 58 : 64;
+  const fabPos = isMobile ? { bottom: 16, right: 16 } : { bottom: 24, right: 24 };
+  const fabSize = isMobile ? 54 : 64;
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <>
       <style>{`
         @property --pcb-angle {
@@ -556,6 +574,32 @@ export default function PortfolioChatBot() {
         </div>
       </div>
 
+      {/* ── Mobile backdrop scrim ──
+          Without this, the card's near-black background is close enough
+          to a dark portfolio page's own background that the "floating
+          card" margins are technically there but invisible to the eye —
+          it just reads as full screen. This scrim is what actually sells
+          the floating effect: it dims the page behind the card so the
+          card's edge (and its margin) is unmistakable. Tapping it closes
+          the chat, same as any modal scrim. */}
+      {isMobile && (
+        <div
+          onClick={() => setIsOpen(false)}
+          aria-hidden="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9997,
+            background: 'rgba(3,3,10,0.6)',
+            backdropFilter: 'blur(3px)',
+            WebkitBackdropFilter: 'blur(3px)',
+            transition: 'opacity 220ms ease',
+            opacity: isOpen ? 1 : 0,
+            pointerEvents: isOpen ? 'auto' : 'none',
+          }}
+        />
+      )}
+
       {/* ── Chat window ── */}
       <div
         style={{
@@ -569,7 +613,9 @@ export default function PortfolioChatBot() {
           transform: isOpen ? 'scale(1)' : 'scale(0.9)',
           opacity: isOpen ? 1 : 0,
           pointerEvents: isOpen ? 'auto' : 'none',
-          boxShadow: `0 0 0 1px ${T.violet}18, 0 26px 64px rgba(0,0,0,0.75), 0 0 46px ${T.violet}14`,
+          boxShadow: isMobile
+            ? `0 0 0 1px ${T.cyan}35, 0 0 0 1px ${T.violet}25 inset, 0 30px 70px rgba(0,0,0,0.85), 0 0 60px ${T.violet}30`
+            : `0 0 0 1px ${T.violet}18, 0 26px 64px rgba(0,0,0,0.75), 0 0 46px ${T.violet}14`,
           background: T.void,
           fontFamily: "'Inter', sans-serif",
           ...winStyle,
@@ -580,26 +626,14 @@ export default function PortfolioChatBot() {
           style={{
             position: 'relative',
             flexShrink: 0,
-            height: isMobile ? 76 : 70,
+            height: 70,
             background: `linear-gradient(135deg, ${T.panel} 0%, ${T.void} 100%)`,
             borderBottom: `1px solid ${T.line}`,
-            paddingTop: isMobile ? 'env(safe-area-inset-top, 0px)' : 0,
           }}
         >
-          {isMobile && (
-            <div
-              style={{
-                width: 36,
-                height: 4,
-                borderRadius: 2,
-                background: T.line,
-                margin: '8px auto 0',
-              }}
-            />
-          )}
           <div
             style={{
-              height: isMobile ? 60 : 70,
+              height: 70,
               display: 'flex',
               alignItems: 'center',
               gap: 12,
@@ -829,7 +863,6 @@ export default function PortfolioChatBot() {
             alignItems: 'center',
             gap: 8,
             padding: '11px 12px',
-            paddingBottom: isMobile ? 'calc(11px + env(safe-area-inset-bottom, 0px))' : 11,
             background: T.panel,
             borderTop: `1px solid ${T.line}`,
           }}
@@ -927,6 +960,7 @@ export default function PortfolioChatBot() {
           }}
         />
       </div>
-    </>
+    </>,
+    document.body
   );
 }
