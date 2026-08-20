@@ -1,20 +1,23 @@
 {
   "name": "portfolio-contact-backend",
   "version": "1.0.0",
-  "type": "module",
+  "description": "Backend for portfolio contact form: stores messages, protects an admin panel, notifies by email via Nodemailer.",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js",
-    "hash-password": "node scripts/hashPassword.js"
+    "dev": "nodemon server.js",
+    "hash-password": "node scripts/generateHash.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "express-rate-limit": "^7.4.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.5.0",
-    "nodemailer": "^9.0.5"
+    "nodemailer": "^6.9.14"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
   }
 }
