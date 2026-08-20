@@ -1,3 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-orange: #ff9900;
+  --color-rose: #ff4d6d;
+  --color-pink: #ff3399;
+  --color-cyan: #22d3ee;
+  --color-darkblue: #0f172a;
+  --color-blue: #64748b;
+}
