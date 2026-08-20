@@ -46,4 +46,14 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// Vercel imports this module and calls the exported app directly per
+// request — it doesn't run a persistent server, so app.listen() would
+// be pointless there (and process.env.VERCEL is set automatically on
+// their platform). Locally with nodemon, VERCEL is undefined, so this
+// behaves exactly as before.
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
+
+module.exports = app;
