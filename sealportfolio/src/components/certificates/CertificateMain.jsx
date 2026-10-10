@@ -5,11 +5,13 @@ import CetificateText from './CertificateText'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const certificates = [
+  { title: 'AWS Certificate', date: 'Date: September 27 2026', image: '/image/certificates/aws.png' },
   { title: 'Euphoria Genx', date: 'Date: February 12 2025', image: '/image/certificates/internship.jpg' },
   { title: 'Internal Hackthon SIH 2025', date: 'Date: September 24 2025', image: '/image/certificates/sihImage.jpg' },
   { title: 'Hack-O-NiT 2024', date: 'Date: May 15 2024', image: '/image/certificates/hackonit.jpg' },
   { title: 'Paper Published 2025', date: 'Date: October 14 2025', image: '/image/certificates/ciacon.jpg' },
   { title: 'Prodigy Internship', date: 'Date: 31st February 2025', image: '/image/certificates/prodigyIntern.jpg' },
+  { title: 'SQL Advanced Certificate', date: 'Date: September 8 2026', image: '/image/certificates/sql.png' },
   { title: 'Programming in Java', date: 'Date: October 25 2025', image: '/image/certificates/npteljava.jpg' },
   { title: 'Object Oriented Programming', date: 'Date: February 12 2025', image: '/image/certificates/oops.jpg' },
   { title: 'PostMan Api', date: 'Date: June 28 2024', image: '/image/certificates/postMan.jpg' },
